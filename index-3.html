@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nova Forge | Online tutoring</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F2F5FA;--ink:#14213D;--mut:#4A5873;--line:#D5DDEA;--a:#0B6E8A;--b:#E09F3E;--neg:#B5423A;--stu:#2E7D5B;--tut:#6B3FA0}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 "Source Sans 3",system-ui,sans-serif}
+h1,h2,h3{font-family:Sora,system-ui,sans-serif;line-height:1.2;margin:0 0 .5em}
+h1{font-size:clamp(1.8rem,6vw,2.8rem)}h2{font-size:1.45rem}h3{font-size:1.05rem;margin-bottom:.3em}
+.wrap{max-width:960px;margin:auto;padding:22px 18px 40px}
+header{background:var(--ink);color:#fff;position:sticky;top:0;z-index:5}
+.bar{display:flex;gap:6px;align-items:center;overflow-x:auto;white-space:nowrap;padding:10px 18px;max-width:960px;margin:auto}
+.bar b{font-family:Sora,sans-serif;margin-right:10px}.who{margin-left:auto;color:#C9D3E6;font-size:.9rem;padding-left:10px}
+.tab{background:none;border:0;color:#C9D3E6;font:600 .95rem "Source Sans 3",sans-serif;padding:8px 12px;border-radius:8px;cursor:pointer}
+.tab[aria-selected=true]{background:#fff;color:var(--ink)}
+.sub{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
+.sub .tab{color:var(--mut);background:#fff;border:1px solid var(--line)}.sub .tab[aria-selected=true]{background:var(--ink);color:#fff}
+:focus-visible{outline:3px solid var(--b);outline-offset:2px}
+.lead,.note{color:var(--mut)}.note{font-size:.9rem}
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px}
+.card.s{border-top:4px solid var(--stu)}.card.t{border-top:4px solid var(--tut)}
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;margin:14px 0}
+.list p,.card p{margin:.25em 0}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:18px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+label{display:block;font-size:.9rem;color:var(--mut)}
+input,select,textarea{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff;color:var(--ink)}
+.ck{display:inline-flex;align-items:center;gap:6px;margin-right:12px}.ck input{width:auto}
+.btn{background:var(--b);color:var(--ink);border:0;border-radius:8px;padding:10px 16px;font:600 1rem "Source Sans 3",sans-serif;cursor:pointer;margin:8px 8px 0 0}
+.btn.alt{background:#fff;border:1px solid var(--line)}
+.msg{font-weight:600;margin:10px 0}.err{color:var(--neg)}.ok{color:var(--a)}
+.tag{display:inline-block;border-radius:8px;padding:2px 9px;font-size:.85rem;font-weight:600;background:#E7EDF7}
+.scroll{overflow-x:auto;margin:12px 0}
+table{width:100%;border-collapse:collapse;min-width:420px;background:#fff}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:Sora,sans-serif;font-size:.9rem}.f{font-family:"Cambria Math",Cambria,Georgia,serif;color:var(--mut)}
+svg{width:100%;height:auto;display:block}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin:12px 0}.row>*{flex:1 1 150px}
+canvas{width:100%;height:auto;aspect-ratio:2/1;background:#fff;border:1px solid var(--line);border-radius:8px;touch-action:none;cursor:crosshair}
+video{width:100%;aspect-ratio:16/9;background:#14213D;border-radius:8px}
+@media print{header,.noprint{display:none}body{background:#fff}}
+</style>
+</head>
+<body>
+<header><div class="bar" id="nav"></div></header>
+<main class="wrap" id="app"></main>
+<script>
+const $=id=>document.getElementById(id);
+const nf=(n,d=2)=>n.toLocaleString('en-ZA',{minimumFractionDigits:d,maximumFractionDigits:d});
+const R=n=>'R '+nf(n);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const kf=v=>Math.abs(v)>=1000?(v/1000).toFixed(1)+'k':String(Math.round(v));
+const hs=s=>{let x=5381;for(const c of s)x=(x*33^c.charCodeAt(0))>>>0;return String(x)};
+const SUBJ=["Mathematics","Accounting","Economics","Business Studies","Physical Sciences","Life Sciences"],AB=["Math","Acc","Eco","BS","PS","LS"];
+const DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],TM=["15:00","16:30","18:00"],K='nova_forge_v2';
+let U=[],B=[],ME=null,PARAS=[],stream=null;
+const S={v:'home',t:'browse',reg:true,role:'student',p:{r:15,c:25,F:800,k:10},inc:true,msg:null,bk:null,rep:null,bid:null};
+try{const j=JSON.parse(localStorage.getItem(K));if(j){U=j.U||[];B=j.B||[];ME=j.ME||null}}catch(e){}
+if(!U.length)U=[['Thabo M.',SUBJ[0],220,'thabo'],['Lerato K.',SUBJ[1],260,'lerato'],['Sipho N.',SUBJ[2],250,'sipho']].map((a,i)=>({id:'d'+i,role:'tutor',name:a[0],email:a[3]+'@novaforge.demo',pw:hs('nova123'),subject:a[1],rate:a[2],av:{d:[1,2,3,4,5],t:TM}}));
+const save=()=>{try{localStorage.setItem(K,JSON.stringify({U,B,ME}))}catch(e){}};
+const me=()=>U.find(u=>u.id===ME),usr=id=>U.find(u=>u.id===id);
+const fd=d=>new Date(d+'T12:00').toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'});
+const vat=()=>S.p.r/100;
+const avg=t=>{const r=B.filter(b=>b.tid===t.id&&b.rating).map(b=>b.rating);return r.length?r.reduce((a,b)=>a+b,0)/r.length:0};
+function slots(t){const o=[];for(let i=1;i<30&&o.length<15;i++){const d=new Date();d.setDate(d.getDate()+i);if(!t.av.d.includes(d.getDay()))continue;
+ const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+ t.av.t.forEach(h=>{if(!B.some(b=>b.tid===t.id&&b.d===k&&b.h===h&&b.status!=='declined'))o.push([k,h])})}return o.slice(0,15)}
+const luhn=s=>{let t=0,d=false;for(let i=s.length-1;i>=0;i--){let n=+s[i];if(d){n*=2;if(n>9)n-=9}t+=n;d=!d}return t%10===0};
+const msg=()=>S.msg?`<p class="msg ${S.msg[0]}" role="alert">${S.msg[1]}</p>`:'';
+
+function chart(labels,vals,fmt,xt,yt){
+ const W=640,H=280,L=56,Bm=44,T=16,Rr=12,w=W-L-Rr,h=H-T-Bm,mx=Math.max(0,...vals),mn=Math.min(0,...vals),sp=(mx-mn)||1,y=v=>T+h*(1-(v-mn)/sp),bw=w/vals.length;
+ let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${yt} by ${xt}">`;
+ for(let i=0;i<=4;i++){const v=mn+sp*i/4,yy=y(v);s+=`<line x1="${L}" x2="${W-Rr}" y1="${yy}" y2="${yy}" stroke="#D5DDEA"/><text x="${L-6}" y="${yy+4}" text-anchor="end" font-size="11" fill="#4A5873">${fmt(v)}</text>`}
+ vals.forEach((v,i)=>{const x0=L+i*bw+bw*.15;s+=`<rect x="${x0}" y="${Math.min(y(v),y(0))}" width="${bw*.7}" height="${Math.max(Math.abs(y(v)-y(0)),1)}" fill="${v<0?'#B5423A':'#0B6E8A'}"><title>${labels[i]}: ${fmt(v)}</title></rect><text x="${x0+bw*.35}" y="${H-Bm+16}" text-anchor="middle" font-size="11" fill="#4A5873">${labels[i]}</text>`});
+ return s+`<line x1="${L}" x2="${W-Rr}" y1="${y(0)}" y2="${y(0)}" stroke="#14213D"/><text x="${L+w/2}" y="${H-6}" text-anchor="middle" font-size="12" fill="#14213D">${xt}</text><text transform="rotate(-90 12 ${T+h/2})" x="12" y="${T+h/2}" text-anchor="middle" font-size="12" fill="#14213D">${yt}</text></svg>`}
+
+/* ---------- views ---------- */
+function home(){const m=me();return `<h1>Learn with a tutor. Know what it costs.</h1><p class="lead">Online tutoring with live video, a shared whiteboard and a progress report after every session.</p>
+${m?`<div class="card"><p>You are logged in as <b>${esc(m.name)}</b>.</p><button class="btn" data-act="go" data-v="dash">Open my dashboard</button></div>`:
+`<div class="two"><div class="card s"><h3>I am a student</h3><p>Browse tutors, book and pay for a session.</p><button class="btn" data-act="role" data-r="student">Student journey</button></div>
+<div class="card t"><h3>I am a tutor</h3><p>Set your availability and approve student requests.</p><button class="btn" data-act="role" data-r="tutor">Tutor journey</button></div></div>`}`}
+
+function auth(){const t=S.role==='tutor';
+ return `<h2>${t?'Tutor':'Student'} journey</h2><p class="lead">Already registered?</p>
+<div class="sub"><button class="tab" aria-selected="${S.reg}" data-act="reg" data-y="1">Yes, log in</button><button class="tab" aria-selected="${!S.reg}" data-act="reg" data-y="0">No, create an account</button></div>${msg()}
+<div class="card ${t?'t':'s'}">${S.reg?`<div class="grid"><label>Email<input id="le" type="email" value="${esc(S.pre||'')}"></label><label>Password<input id="lp" type="password"></label></div><button class="btn" data-act="login">Log in</button>
+${t?'<p class="note">Demo tutor: thabo@novaforge.demo, password nova123</p>':''}`:
+`<div class="grid"><label>Full name<input id="cn" maxlength="40"></label><label>Email<input id="ce" type="email"></label><label>Password (6+ characters)<input id="cp" type="password"></label>
+${t?`<label>Subject<select id="cs">${SUBJ.map(s=>`<option>${s}</option>`).join('')}</select></label><label>Hourly rate (R, excl. VAT)<input id="cr" type="number" min="50" max="1000" value="200"></label>`:
+`<label>Grade<select id="cg"><option>10</option><option>11</option><option>12</option></select></label>`}</div><button class="btn" data-act="create">Create account</button><p class="note">Demo only: passwords are scrambled in this browser, never sent anywhere.</p>`}</div>`}
+
+function dash(){const m=me();if(!m){S.v='home';return home()}
+ const st=m.role==='student',T=st?[['browse','Browse and book'],['mine','My sessions']]:[['req','Requests'],['sess','Sessions'],['prof','Profile and availability']];
+ return `<h2>${st?'Student':'Tutor'} dashboard</h2><div class="sub">${T.map(a=>`<button class="tab" aria-selected="${S.t===a[0]}" data-act="tab" data-t="${a[0]}">${a[1]}</button>`).join('')}</div>${msg()}`+({browse,mine,req,sess,prof}[S.t]||browse)(m)}
+
+function browse(){
+ const sub=S.f||'',k=S.k||'rate',dir=S.o==='desc'?-1:1;
+ const a=U.filter(u=>u.role==='tutor'&&(!sub||u.subject===sub)).sort((u,w)=>(k==='name'?u.name.localeCompare(w.name):k==='rating'?avg(u)-avg(w):u.rate-w.rate)*dir);
+ let h=`<div class="row"><label>Subject<select data-chg="f"><option value="">All subjects</option>${SUBJ.map(s=>`<option ${s===sub?'selected':''}>${s}</option>`).join('')}</select></label>
+<label>Sort by<select data-chg="k"><option value="rate" ${k==='rate'?'selected':''}>Price</option><option value="rating" ${k==='rating'?'selected':''}>Rating</option><option value="name" ${k==='name'?'selected':''}>Tutor name</option></select></label>
+<label>Order<select data-chg="o"><option value="asc">Ascending</option><option value="desc" ${dir<0?'selected':''}>Descending</option></select></label></div>`;
+ if(S.bk)h+=bookp();
+ return h+`<div class="list">${a.map(t=>{const n=slots(t).length;return `<div class="card s"><h3>${esc(t.name)}</h3><p>${t.subject}</p><p><b>${R(t.rate)}</b> + VAT per hour</p><p>Rating: ${avg(t)?avg(t).toFixed(1):'New'}</p><p>${n} free slots</p><button class="btn" data-act="book" data-id="${t.id}" ${n?'':'disabled'}>Book a session</button></div>`}).join('')||'<p>No tutors for this subject yet.</p>'}</div>`}
+
+function bookp(){const t=usr(S.bk.tid),p=t.rate,v=p*vat();
+ let h=`<div class="card s"><h3>Book ${esc(t.name)} (${t.subject})</h3><p>Price: ${R(p)} + ${R(v)} VAT = <b>${R(p+v)}</b></p>`;
+ if(S.bk.step===1)h+=`<label>Choose a slot<select id="sl">${slots(t).map(s=>`<option value="${s[0]}|${s[1]}">${fd(s[0])} at ${s[1]}</option>`).join('')}</select></label><button class="btn" data-act="topay">Enter payment details</button>`;
+ else h+=`<p>${fd(S.bk.d)} at ${S.bk.h}</p><div class="grid"><label>Card number<input id="cc" inputmode="numeric" autocomplete="off" placeholder="4242 4242 4242 4242"></label><label>Expiry (MM/YY)<input id="ce2" placeholder="12/28"></label><label>CVV<input id="cv" inputmode="numeric" maxlength="3"></label></div><button class="btn" data-act="pay">Pay ${R(p+v)}</button><p class="note">Demo payment: card details are checked in your browser and never stored. Test card 4242 4242 4242 4242, any future expiry, any 3 digits.</p>`;
+ return h+`<button class="btn alt" data-act="cancelbk">Cancel</button></div>`}
+
+function mine(m){const a=B.filter(b=>b.sid===m.id).sort((u,w)=>w.id-u.id);
+ return `<div class="list">${a.map(b=>{const t=usr(b.tid),tot=t.rate*(1+vat());
+ let s=`<div class="card s"><h3>${esc(t.name)}, ${t.subject}</h3><p>${fd(b.d)} at ${b.h}, ${R(tot)} paid</p>`;
+ if(b.status==='pending')s+='<p><span class="tag">Waiting for approval</span></p><p>Booking confirmed and the tutor has been notified.</p>';
+ if(b.status==='declined')s+=`<p><span class="tag">Declined</span></p><p>The tutor could not take this request. ${R(tot)} is refunded (demo).</p>`;
+ if(b.status==='approved'||b.status==='done'){s+=`<p><span class="tag">${b.status==='done'?'Completed':'Approved'}</span></p>`;
+  if(b.status==='approved')s+=`<p>Your tutor approved the request. Join at the booked time.</p><button class="btn" data-act="join" data-id="${b.id}">Join live session</button>`;
+  if(b.att&&!b.rating)s+=`<label>Rate this session (1 to 10)<select id="rt${b.id}">${[1,2,3,4,5,6,7,8,9,10].map(v=>`<option>${v}</option>`).join('')}</select></label><label>Feedback<textarea id="fb${b.id}" rows="2"></textarea></label><button class="btn" data-act="rate" data-id="${b.id}">Submit feedback</button>`;
+  if(b.rating)s+=`<p>Your rating: <b>${b.rating}/10</b>${b.fb?`, "${esc(b.fb)}"`:''}</p>`;
+  if(b.report)s+=`<p><b>Progress report</b></p><p>Topic: ${esc(b.report.topic)}</p><p>Score: ${b.report.score}/10</p><p>Notes: ${esc(b.report.notes)}</p>`;
+  else if(b.status==='done'===false&&b.att)s+='<p class="note">Your progress report will appear here once your tutor submits it.</p>'}
+ return s+'</div>'}).join('')||'<p>No sessions yet. Choose Browse and book to start.</p>'}</div>`}
+
+function req(m){const a=B.filter(b=>b.tid===m.id&&b.status==='pending');
+ return `<p class="lead">Matching students with approved payment, subject and time.</p><div class="list">${a.map(b=>{const s=usr(b.sid);return `<div class="card t"><h3>${esc(s.name)}, Grade ${s.grade}</h3><p>${m.subject}</p><p>${fd(b.d)} at ${b.h}</p><p><span class="tag">Payment approved</span></p><button class="btn" data-act="appr" data-id="${b.id}" data-y="1">Approve</button><button class="btn alt" data-act="appr" data-id="${b.id}" data-y="0">Decline</button></div>`}).join('')||'<p>No matching requests right now.</p>'}</div>`}
+
+function sess(m){const a=B.filter(b=>b.tid===m.id&&(b.status==='approved'||b.status==='done')).sort((u,w)=>w.id-u.id);
+ return `<div class="list">${a.map(b=>{const s=usr(b.sid);let h=`<div class="card t"><h3>${esc(s.name)}, Grade ${s.grade}</h3><p>${fd(b.d)} at ${b.h}</p><p><span class="tag">${b.status==='done'?'Report sent':'Lesson confirmed'}</span></p>`;
+ if(b.status==='approved'){h+=`<button class="btn" data-act="join" data-id="${b.id}">Start live session</button><button class="btn alt" data-act="repo" data-id="${b.id}">Write progress report</button>`;
+  if(S.rep===b.id)h+=`<label>Topic covered<input id="rtp" maxlength="80"></label><label>Student score (0 to 10)<input id="rsc" type="number" min="0" max="10" value="7"></label><label>Feedback<textarea id="rnt" rows="2"></textarea></label><button class="btn" data-act="reps" data-id="${b.id}">Send report to student</button>`}
+ else h+=`<p>Score ${b.report.score}/10, ${esc(b.report.topic)}</p>${b.rating?`<p>Student rating: ${b.rating}/10</p>`:''}`;
+ return h+'</div>'}).join('')||'<p>No approved sessions yet.</p>'}</div>`}
+
+function prof(m){return `<div class="card t"><div class="grid"><label>Subject<select id="ps">${SUBJ.map(s=>`<option ${s===m.subject?'selected':''}>${s}</option>`).join('')}</select></label><label>Hourly rate (R, excl. VAT)<input id="pr" type="number" min="50" max="1000" value="${m.rate}"></label></div>
+<p><b>Available days</b></p>${[1,2,3,4,5,6].map(d=>`<label class="ck"><input type="checkbox" class="pd" value="${d}" ${m.av.d.includes(d)?'checked':''}>${DN[d]}</label>`).join('')}
+<p><b>Available times</b></p>${TM.map(t=>`<label class="ck"><input type="checkbox" class="pt" value="${t}" ${m.av.t.includes(t)?'checked':''}>${t}</label>`).join('')}<br><button class="btn" data-act="psave">Save profile</button></div>`}
+
+function live(){const b=B.find(x=>x.id===S.bid),m=me();if(!b||!m)return home();const o=usr(m.role==='tutor'?b.sid:b.tid);
+ return `<h2>Live session with ${esc(o.name)}</h2><p class="lead">${usr(b.tid).subject}, ${fd(b.d)} at ${b.h}</p>
+<div class="two"><div><video id="vid" playsinline muted></video><button class="btn alt" data-act="cam">Start camera</button><p class="note" id="cm"></p></div>
+<div><canvas id="wb" width="600" height="300" aria-label="Shared whiteboard"></canvas><button class="btn alt" data-act="wclear">Clear whiteboard</button></div></div>
+<button class="btn" data-act="leave">Leave session</button>`}
+
+/* ---------- insights and report ---------- */
+const SAMPLE=[8,9,7,10,6,9,8,7,9,10,5,8,9,7,8].map((r,i)=>({s:SUBJ[i%6],p:[220,260,250,240,260,240][i%6],r}));
+function calc(){
+ const P=S.p,r=P.r/100,c=P.c/100,F=P.F,k=P.k;
+ let A=B.filter(b=>b.status==='approved'||b.status==='done').map(b=>{const t=usr(b.tid);return{s:t.subject,p:t.rate,r:b.rating||0}});
+ if(S.inc)A=SAMPLE.concat(A);const n=A.length;if(!n)return null;
+ const rev=A.reduce((a,b)=>a+b.p,0),pb=rev/n,vt=r*rev,com=c*rev,prof=com-F,be=c*pb>0?Math.ceil(F/(c*pb)):null;
+ const fr=[['Sessions','n',n],['Mean price per session','p̄ = Rev ÷ n',R(pb)],['Revenue (excl. VAT)','Rev = Σp',R(rev)],['VAT','V = r · Rev',R(vt)],['Paid by students','Rev(1 + r)',R(rev+vt)],['Platform commission','c · Rev',R(com)],['Tutor payouts','(1 − c) · Rev',R(rev-com)],['Profit this month','P = c · Rev − F',R(prof)],['Break-even sessions','x* = ⌈F ÷ (c · p̄)⌉',be===null?'none':be]];
+ const d=A.map(b=>b.r).filter(v=>v>0).sort((a,b)=>a-b),m=d.length;let sr=[],ST=null;
+ if(m){const mean=d.reduce((a,b)=>a+b,0)/m,med=m%2?d[(m-1)/2]:(d[m/2-1]+d[m/2])/2,hi=d.filter(v=>v>=8).length;ST={m,mean,med,rg:d[m-1]-d[0],mn:d[0],mx:d[m-1],pc:hi/m*100};
+  sr=[['Number of ratings','n',m],['Mean','x̄ = Σx ÷ n',nf(mean)],['Median','middle of the sorted list',nf(med)],['Range','max − min = '+d[m-1]+' − '+d[0],ST.rg],['Rated 8 or higher','count ≥ 8 ÷ n × 100',nf(ST.pc,1)+'%']]}
+ const cnt=SUBJ.map(s=>A.filter(b=>b.s===s).length),lab=[],val=[];let tot=0;
+ for(let i=1;i<=12;i++){const x=Math.max(0,Math.round(n+k*(i-1))),p=c*pb*x-F;lab.push('M'+i);val.push(p);tot+=p}
+ PARAS=[`Nova Forge is an online tutoring platform. Monthly profit P is a linear function of the independent variable x, the number of sessions, with parameters commission c = ${nf(c*100,1)}%, fixed cost F = ${R(F)}, VAT rate r = ${nf(r*100,1)}% and mean session price p̄ = ${R(pb)}. So P(x) = c · p̄ · x − F.`,
+ `The platform recorded n = ${n} sessions (discrete values) with revenue ${R(rev)} excluding VAT. VAT is ${R(vt)}, students paid ${R(rev+vt)}, the commission is ${R(com)} and the profit is ${R(prof)}. `+(be===null?'There is no break-even point.':`The break-even point is x* = ${be} sessions.`),
+ `With growth of k = ${k} sessions per month, total profit over 12 months is ${R(tot)}.`,
+ ST?`The ${ST.m} session ratings have a mean of ${nf(ST.mean)}, a median of ${nf(ST.med)} and a range of ${ST.rg} (${ST.mn} to ${ST.mx}). ${nf(ST.pc,1)}% of ratings were 8 or higher.`:'No session ratings have been recorded yet.',
+ 'Constraints: x is a non-negative whole number and 0 ≤ r, c ≤ 1.'];
+ return{fr,sr,cnt,lab,val}}
+const tbl=(a,h)=>`<div class="scroll"><table><thead><tr><th>${h}</th><th>Expression</th><th>Value</th></tr></thead><tbody>${a.map(x=>`<tr><td>${x[0]}</td><td class="f">${x[1]}</td><td><b>${x[2]}</b></td></tr>`).join('')}</tbody></table></div>`;
+function ins(){const D=calc(),P=S.p;
+ return `<h2>Insights</h2><p class="lead">Every figure comes from the sessions and ratings on this site.</p>
+<div class="card"><div class="grid"><label>VAT rate r (%)<input type="number" data-p="r" value="${P.r}" min="0" max="100"></label><label>Commission c (%)<input type="number" data-p="c" value="${P.c}" min="0" max="100"></label><label>Fixed cost F per month (R)<input type="number" data-p="F" value="${P.F}" min="0"></label><label>Growth k (sessions per month)<input type="number" data-p="k" value="${P.k}"></label></div>
+<label class="ck" style="margin-top:10px"><input type="checkbox" data-inc="1" ${S.inc?'checked':''}>Include 15 sample sessions with ratings</label></div>`+
+ (D?`<h3 style="margin-top:16px">Finance</h3>${tbl(D.fr,'Quantity')}<h3>Rating statistics</h3>${D.sr.length?tbl(D.sr,'Statistic'):'<p>No ratings yet.</p>'}
+<div class="card"><h3>Sessions per subject</h3>${chart(AB,D.cnt,v=>String(Math.round(v)),'Subject','Sessions')}<p class="note">Math = Mathematics, Acc = Accounting, Eco = Economics, BS = Business Studies, PS = Physical Sciences, LS = Life Sciences.</p></div>
+<div class="card" style="margin-top:12px"><h3>Profit growth over 12 months</h3>${chart(D.lab,D.val,kf,'Month','Profit (R)')}<p class="note">P(x<sub>i</sub>) = c · p̄ · x<sub>i</sub> − F, where x<sub>i</sub> = n + k(i − 1).</p></div>`:'<p>No sessions yet. Include the sample data or complete a booking.</p>')}
+function report(){calc();return `<h2>Project report summary</h2><p class="lead">Written automatically from the Insights figures.</p><div class="card">${PARAS.map(t=>`<p>${t}</p>`).join('')||'<p>No sessions to report on yet.</p>'}</div>
+<div class="noprint"><button class="btn" data-act="print">Print or save as PDF</button><button class="btn alt" data-act="copy" id="cp">Copy text</button></div>
+<h3 style="margin-top:18px">Mathematical terms used</h3><div class="card"><p><b>Independent variable:</b> x, sessions per month. <b>Dependent variable:</b> P(x), monthly profit. <b>Parameters:</b> r, c, F, k and each tutor's rate. <b>Linear function:</b> P(x) = c · p̄ · x − F. <b>Constraints:</b> x ≥ 0 and 0 ≤ r, c ≤ 1. <b>Discrete values:</b> sessions and ratings are whole numbers.</p></div>
+<p class="note">Group: Ramalebane J.P, Noko P.A.S, Kunene S.L.A, Vuma M, Mguni M.E, Nemamilwe A, Shozi S, Bapela M, Chauke R.N</p>`}
+
+/* ---------- render ---------- */
+function render(){const m=me();
+ $('nav').innerHTML=`<b>Nova Forge</b>`+[['home','Home'],['dash','Dashboard'],['ins','Insights'],['report','Report']].map(a=>`<button class="tab" aria-selected="${S.v===a[0]}" data-act="go" data-v="${a[0]}">${a[1]}</button>`).join('')+(m?`<span class="who">${esc(m.name)} (${m.role})</span><button class="tab" data-act="logout">Log out</button>`:'');
+ $('app').innerHTML=({home,auth,dash,live,ins,report}[S.v]||home)();
+ if(S.v==='live')wb()}
+function wb(){const c=$('wb'),x=c.getContext('2d');let d=false;x.lineWidth=3;x.lineCap='round';x.strokeStyle='#14213D';
+ const p=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height]};
+ c.onpointerdown=e=>{d=true;const[a,b]=p(e);x.beginPath();x.moveTo(a,b);c.setPointerCapture(e.pointerId)};
+ c.onpointermove=e=>{if(!d)return;const[a,b]=p(e);x.lineTo(a,b);x.stroke()};c.onpointerup=()=>d=false}
+function stop(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}}
+
+const act={
+ go(d){S.v=d.v;S.msg=null;render()},
+ role(d){S.role=d.r;S.reg=true;S.msg=null;S.v='auth';render()},
+ reg(d){S.reg=d.y==='1';S.msg=null;render()},
+ create(){const n=$('cn').value.trim(),e=$('ce').value.trim().toLowerCase(),p=$('cp').value,t=S.role==='tutor';
+  if(!n||!e.includes('@')||p.length<6)return S.msg=['err','Enter your name, a valid email and a password of 6 or more characters.'],render();
+  if(U.some(u=>u.email===e))return S.msg=['err','That email is already registered. Choose Yes, log in.'],render();
+  const rt=t?+$('cr').value:0;if(t&&(rt<50||rt>1000))return S.msg=['err','Choose a rate between R50 and R1000.'],render();
+  U.push(t?{id:'u'+Date.now(),role:'tutor',name:n,email:e,pw:hs(p),subject:$('cs').value,rate:rt,av:{d:[1,2,3,4,5],t:TM}}:{id:'u'+Date.now(),role:'student',name:n,email:e,pw:hs(p),grade:$('cg').value});
+  save();S.reg=true;S.pre=e;S.msg=['ok','Account created. Log in to continue.'];render()},
+ login(){const u=U.find(x=>x.role===S.role&&x.email===$('le').value.trim().toLowerCase()&&x.pw===hs($('lp').value));
+  if(!u)return S.msg=['err','Email or password is not correct.'],render();
+  ME=u.id;save();S.v='dash';S.t=u.role==='student'?'browse':'req';S.msg=null;render()},
+ logout(){ME=null;save();S.v='home';S.msg=null;render()},
+ tab(d){S.t=d.t;S.msg=null;S.bk=null;render()},
+ book(d){S.bk={tid:d.id,step:1};S.msg=null;render()},
+ cancelbk(){S.bk=null;render()},
+ topay(){const v=$('sl').value.split('|');S.bk.d=v[0];S.bk.h=v[1];S.bk.step=2;render()},
+ pay(){const cc=$('cc').value.replace(/\s/g,''),ex=$('ce2').value.trim().match(/^(\d{2})\/(\d{2})$/),cv=$('cv').value;let bad='';
+  if(!/^\d{13,19}$/.test(cc)||!luhn(cc))bad='The card number is not valid.';
+  else if(!ex||+ex[1]<1||+ex[1]>12||new Date(2000+ +ex[2],+ex[1],0,23,59)<new Date())bad='The expiry date is not valid or has passed.';
+  else if(!/^\d{3}$/.test(cv))bad='The CVV must be 3 digits.';
+  if(bad)return S.msg=['err',bad+' Check the details and try again.'],render();
+  const t=usr(S.bk.tid);B.push({id:Date.now(),sid:ME,tid:t.id,d:S.bk.d,h:S.bk.h,status:'pending'});save();
+  S.bk=null;S.t='mine';S.msg=['ok','Payment accepted. Your booking is confirmed and matched to '+esc(t.name)+'. Waiting for approval.'];render()},
+ appr(d){const b=B.find(x=>String(x.id)===d.id);b.status=d.y==='1'?'approved':'declined';save();S.msg=['ok',d.y==='1'?'Request approved. The student has been notified.':'Request declined. Next request shown.'];render()},
+ join(d){S.bid=+d.id;S.v='live';render()},
+ cam(){const v=$('vid');(navigator.mediaDevices?navigator.mediaDevices.getUserMedia({video:true}):Promise.reject()).then(s=>{stream=s;v.srcObject=s;v.play()}).catch(()=>$('cm').textContent='Camera is not available or permission was denied.')},
+ wclear(){const c=$('wb');c.getContext('2d').clearRect(0,0,c.width,c.height)},
+ leave(){stop();const b=B.find(x=>x.id===S.bid),m=me();S.v='dash';if(m.role==='student'){b.att=true;S.t='mine'}else{S.t='sess';S.rep=b.id}save();render()},
+ rate(d){const b=B.find(x=>String(x.id)===d.id);b.rating=+$('rt'+d.id).value;b.fb=$('fb'+d.id).value.trim();save();render()},
+ repo(d){S.rep=+d.id;render()},
+ reps(d){const b=B.find(x=>String(x.id)===d.id),t=$('rtp').value.trim(),n=$('rnt').value.trim(),s=+$('rsc').value;
+  if(!t||!n||s<0||s>10)return S.msg=['err','Add the topic, feedback and a score from 0 to 10.'],render();
+  b.report={topic:t,notes:n,score:s};b.status='done';S.rep=null;save();S.msg=['ok','Report sent to the student dashboard.'];render()},
+ psave(){const m=me(),r=+$('pr').value,d=[...document.querySelectorAll('.pd:checked')].map(x=>+x.value),t=[...document.querySelectorAll('.pt:checked')].map(x=>x.value);
+  if(r<50||r>1000||!d.length||!t.length)return S.msg=['err','Choose a rate from R50 to R1000, at least one day and at least one time.'],render();
+  m.subject=$('ps').value;m.rate=r;m.av={d,t};save();S.msg=['ok','Profile saved. Students can now book your free slots.'];render()},
+ print(){window.print()},
+ copy(){const b=$('cp');(navigator.clipboard?navigator.clipboard.writeText(PARAS.join('\n\n')):Promise.reject()).then(()=>b.textContent='Copied').catch(()=>b.textContent='Copy failed');setTimeout(()=>b.textContent='Copy text',1800)}
+};
+document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(a&&act[a.dataset.act])act[a.dataset.act](a.dataset)});
+document.addEventListener('change',e=>{const t=e.target;
+ if(t.dataset.chg){S[t.dataset.chg]=t.value;render()}
+ if(t.dataset.p){S.p[t.dataset.p]=parseFloat(t.value)||0;render()}
+ if(t.dataset.inc){S.inc=t.checked;render()}});
+render();
+</script>
+</body>
+</html>
