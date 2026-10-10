@@ -59,9 +59,10 @@ const SUBJ=["Mathematics","Accounting","Economics","Business Studies","Physical 
 const DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],TM=["15:00","16:30","18:00"],K='nova_forge_v2';
 let U=[],B=[],ME=null,PARAS=[],stream=null;
 const S={v:'home',t:'browse',reg:true,role:'student',p:{r:15,c:25,F:800,k:10},inc:true,msg:null,bk:null,rep:null,bid:null};
-try{const j=JSON.parse(localStorage.getItem(K));if(j){U=j.U||[];B=j.B||[];ME=j.ME||null}}catch(e){}
+const load=()=>{try{const j=JSON.parse(localStorage.getItem(K));if(j){U=j.U||[];B=j.B||[]}}catch(e){}};load();
+try{ME=sessionStorage.getItem('nf_me')}catch(e){}
 if(!U.length)U=[['Thabo M.',SUBJ[0],220,'thabo'],['Lerato K.',SUBJ[1],260,'lerato'],['Sipho N.',SUBJ[2],250,'sipho']].map((a,i)=>({id:'d'+i,role:'tutor',name:a[0],email:a[3]+'@novaforge.demo',pw:hs('nova123'),subject:a[1],rate:a[2],av:{d:[1,2,3,4,5],t:TM}}));
-const save=()=>{try{localStorage.setItem(K,JSON.stringify({U,B,ME}))}catch(e){}};
+const save=()=>{try{localStorage.setItem(K,JSON.stringify({U,B}));ME?sessionStorage.setItem('nf_me',ME):sessionStorage.removeItem('nf_me')}catch(e){}};
 const me=()=>U.find(u=>u.id===ME),usr=id=>U.find(u=>u.id===id);
 const fd=d=>new Date(d+'T12:00').toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'});
 const vat=()=>S.p.r/100;
@@ -230,11 +231,14 @@ const act={
  print(){window.print()},
  copy(){const b=$('cp');(navigator.clipboard?navigator.clipboard.writeText(PARAS.join('\n\n')):Promise.reject()).then(()=>b.textContent='Copied').catch(()=>b.textContent='Copy failed');setTimeout(()=>b.textContent='Copy text',1800)}
 };
-document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(a&&act[a.dataset.act])act[a.dataset.act](a.dataset)});
+document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(a&&act[a.dataset.act]){load();act[a.dataset.act](a.dataset)}});
 document.addEventListener('change',e=>{const t=e.target;
  if(t.dataset.chg){S[t.dataset.chg]=t.value;render()}
  if(t.dataset.p){S.p[t.dataset.p]=parseFloat(t.value)||0;render()}
  if(t.dataset.inc){S.inc=t.checked;render()}});
+const sync=()=>{load();const a=document.activeElement;if(!a||!/INPUT|TEXTAREA|SELECT/.test(a.tagName))render()};
+window.addEventListener('storage',e=>{if(e.key===K)sync()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
 render();
 </script>
 </body>
