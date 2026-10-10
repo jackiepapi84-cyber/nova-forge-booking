@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#EEF3FB">
+<meta name="theme-color" content="#FFFFFF">
 <script>try{var t=localStorage.getItem('nf_theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t}catch(e){}</script>
 <title>Nova Forge | Online tutoring</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -189,6 +189,36 @@ canvas{background:rgba(255,255,255,.85)}
 :root[data-theme=dark] svg rect[fill="#B5423A"]{fill:#FF7B7B}
 @supports not (backdrop-filter:blur(1px)){:root[data-theme=dark] :is(.bar,.hero,.card,.steps div,.msg,table){background:rgba(20,26,40,.95)}}
 @media(prefers-reduced-transparency:reduce){:root[data-theme=dark] :is(.bar,.hero,.card,.steps div,.msg,table,.sub .tab,#themeBtn){background:#141A28;backdrop-filter:none;-webkit-backdrop-filter:none}#themeBtn{background:#fff;backdrop-filter:none}}
+/* Flat colours: clear white (light) and black (dark) */
+body{background:#fff}
+body::before{display:none}
+.bar{background:rgba(255,255,255,.82);border:1px solid rgba(0,0,0,.08);box-shadow:0 4px 20px rgba(0,0,0,.08)}
+.hero,.card,.steps div,.msg,.sub .tab{background:#fff;border:1px solid rgba(0,0,0,.09)}
+.hero{box-shadow:0 8px 30px rgba(0,0,0,.07)}
+.card{box-shadow:0 4px 18px rgba(0,0,0,.06)}
+.card.s{box-shadow:inset 0 3px 0 var(--stu),0 4px 18px rgba(0,0,0,.06)}
+.card.t{box-shadow:inset 0 3px 0 var(--tut),0 4px 18px rgba(0,0,0,.06)}
+.steps div{box-shadow:0 4px 16px rgba(0,0,0,.05)}
+.msg{box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.list .card:hover,.two .card:hover{box-shadow:0 10px 28px rgba(0,0,0,.12)}
+table{background:#fff;border:1px solid rgba(0,0,0,.09)}
+thead th{background:#F5F5F7}
+input,select,textarea{background:#fff;border:1px solid rgba(0,0,0,.18)}
+#themeBtn{background:#fff;border-color:rgba(0,0,0,.1);box-shadow:0 4px 14px rgba(0,0,0,.15)}
+:root[data-theme=dark] body{background:#000}
+:root[data-theme=dark] .bar{background:rgba(28,28,30,.72);border-color:rgba(255,255,255,.1);box-shadow:0 4px 20px rgba(0,0,0,.6)}
+:root[data-theme=dark] :is(.hero,.card,.steps div,.msg,.sub .tab){background:#1C1C1E;border-color:rgba(255,255,255,.09)}
+:root[data-theme=dark] .hero,:root[data-theme=dark] .steps div,:root[data-theme=dark] .msg{box-shadow:none}
+:root[data-theme=dark] .card{box-shadow:none}
+:root[data-theme=dark] .card.s{box-shadow:inset 0 3px 0 var(--stu)}
+:root[data-theme=dark] .card.t{box-shadow:inset 0 3px 0 var(--tut)}
+:root[data-theme=dark] .list .card:hover,:root[data-theme=dark] .two .card:hover{box-shadow:none;background:#232326}
+:root[data-theme=dark] table{background:#1C1C1E;border-color:rgba(255,255,255,.09)}
+:root[data-theme=dark] thead th{background:#2C2C2E}
+:root[data-theme=dark] input,:root[data-theme=dark] select,:root[data-theme=dark] textarea{background:#2C2C2E;border-color:rgba(255,255,255,.14)}
+:root[data-theme=dark] #themeBtn{background:#1C1C1E;border-color:rgba(255,255,255,.14);box-shadow:none}
+@supports not (backdrop-filter:blur(1px)){:root[data-theme=dark] :is(.bar,.hero,.card,.steps div,.msg,table){background:#1C1C1E}}
+@media(prefers-reduced-transparency:reduce){:root[data-theme=dark] :is(.bar,.hero,.card,.steps div,.msg,table,.sub .tab,#themeBtn){background:#1C1C1E}}
 </style>
 </head>
 <body>
@@ -340,8 +370,8 @@ function report(){calc();return `<h2>Project report summary</h2><p class="lead">
 <p class="note">Group: Ramalebane J.P, Noko P.A.S, Kunene S.L.A, Vuma M, Mguni M.E, Nemamilwe A, Shozi S, Bapela M, Chauke R.N, Nyawo S</p>`}
 
 /* ---------- render ---------- */
-function render(){const m=me();
- $('nav').innerHTML=`<b>Nova Forge</b>`+[['home','Home'],['dash','Dashboard'],['ins','Insights'],['report','Report']].map(a=>`<button class="tab" aria-selected="${S.v===a[0]}" data-act="go" data-v="${a[0]}">${a[1]}</button>`).join('')+(m?`<span class="who">${esc(m.name)} (${m.role})</span><button class="tab" data-act="logout">Log out</button>`:'');
+function render(){const m=me();if((S.v==='ins'||S.v==='report')&&!(m&&m.role==='tutor'))S.v=m?'dash':'home';
+ $('nav').innerHTML=`<b>Nova Forge</b>`+[['home','Home'],['dash','Dashboard']].concat(m&&m.role==='tutor'?[['ins','Insights'],['report','Report']]:[]).map(a=>`<button class="tab" aria-selected="${S.v===a[0]}" data-act="go" data-v="${a[0]}">${a[1]}</button>`).join('')+(m?`<span class="who">${esc(m.name)} (${m.role})</span><button class="tab" data-act="logout">Log out</button>`:'');
  $('app').innerHTML=({home,auth,dash,live,ins,report}[S.v]||home)();
  if(S.v==='live')wb()}
 function wb(){const c=$('wb'),x=c.getContext('2d');let d=false;x.lineWidth=3;x.lineCap='round';x.strokeStyle='#14213D';
@@ -408,7 +438,7 @@ render();
 (function(){
  const r=document.documentElement,b=document.getElementById('themeBtn'),mq=window.matchMedia('(prefers-color-scheme: dark)');
  let st=null;try{st=localStorage.getItem('nf_theme')}catch(e){}
- const apply=t=>{r.dataset.theme=t;b.textContent=t==='dark'?'☀️':'🌙';const n=t==='dark'?'light':'dark';b.setAttribute('aria-label','Switch to '+n+' mode');b.title='Switch to '+n+' mode';const m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='dark'?'#0A0E18':'#EEF3FB'};
+ const apply=t=>{r.dataset.theme=t;b.textContent=t==='dark'?'☀️':'🌙';const n=t==='dark'?'light':'dark';b.setAttribute('aria-label','Switch to '+n+' mode');b.title='Switch to '+n+' mode';const m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='dark'?'#000000':'#FFFFFF'};
  apply(st||(mq.matches?'dark':'light'));
  b.addEventListener('click',()=>{st=r.dataset.theme==='dark'?'light':'dark';apply(st);try{localStorage.setItem('nf_theme',st)}catch(e){}});
  if(mq.addEventListener)mq.addEventListener('change',e=>{if(!st)apply(e.matches?'dark':'light')});
