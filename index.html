@@ -118,6 +118,35 @@ tbody tr:nth-child(even) td{background:#fff}
 tbody tr:hover td{background:#F5F9FF}
 video,canvas{border-radius:16px;border:0}
 @media(max-width:600px){.hero{padding:38px 18px;border-radius:22px}}
+/* iCloud-style glass layer (styles only) */
+body{background:#EEF3FB}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:
+ radial-gradient(900px 520px at 10% -5%,#B9D9FF 0%,transparent 60%),
+ radial-gradient(800px 540px at 96% 4%,#D8CCFF 0%,transparent 60%),
+ radial-gradient(900px 600px at 72% 102%,#B8EFE4 0%,transparent 60%),
+ radial-gradient(700px 520px at -2% 92%,#FFD6E4 0%,transparent 60%)}
+header{background:transparent;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:10px 12px}
+.bar{background:rgba(255,255,255,.55);backdrop-filter:blur(26px) saturate(190%);-webkit-backdrop-filter:blur(26px) saturate(190%);border:1px solid rgba(255,255,255,.75);border-radius:22px;box-shadow:0 8px 30px rgba(40,60,120,.14),inset 0 1px 0 rgba(255,255,255,.9);padding:8px 14px}
+.hero,.card,.steps div,.msg,.sub .tab{background:rgba(255,255,255,.58);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.72)}
+.hero{border-radius:32px;padding:60px 28px;box-shadow:0 12px 40px rgba(40,60,120,.12),inset 0 1px 0 rgba(255,255,255,.9)}
+.card{border-radius:24px;box-shadow:0 8px 28px rgba(40,60,120,.10),inset 0 1px 0 rgba(255,255,255,.9)}
+.card.s{box-shadow:inset 0 3px 0 var(--stu),0 8px 28px rgba(40,60,120,.10)}
+.card.t{box-shadow:inset 0 3px 0 var(--tut),0 8px 28px rgba(40,60,120,.10)}
+.list .card:hover,.two .card:hover{box-shadow:0 14px 38px rgba(40,60,120,.18);transform:translateY(-3px)}
+.two .card{padding:24px}.two .card h3{font-size:1.3rem}
+.steps div{border-radius:22px;box-shadow:0 6px 22px rgba(40,60,120,.09),inset 0 1px 0 rgba(255,255,255,.9)}
+.sub .tab[aria-selected=true],.sub .tab[aria-selected=true]:hover{background:var(--a);border-color:var(--a)}
+.msg{box-shadow:0 4px 16px rgba(40,60,120,.08)}
+input,select,textarea{background:rgba(255,255,255,.82);border:1px solid rgba(60,70,100,.18)}
+table{background:rgba(255,255,255,.7);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.75)}
+thead th{background:rgba(238,243,251,.8)}
+tbody tr:nth-child(even) td{background:transparent}
+tbody tr:hover td{background:rgba(0,113,227,.06)}
+canvas{background:rgba(255,255,255,.85)}
+@supports not (backdrop-filter:blur(1px)){.bar,.hero,.card,.steps div,.msg,table{background:rgba(255,255,255,.94)}}
+@media(prefers-reduced-transparency:reduce){.bar,.hero,.card,.steps div,.msg,table,.sub .tab{background:#fff;backdrop-filter:none;-webkit-backdrop-filter:none}}
+@media(max-width:600px){header{padding:8px}.hero{padding:40px 18px;border-radius:26px}}
+@media print{body::before{display:none}.card,.hero{background:#fff;box-shadow:none}}
 </style>
 </head>
 <body>
