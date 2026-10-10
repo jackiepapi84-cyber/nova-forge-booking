@@ -202,9 +202,9 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const kf=v=>Math.abs(v)>=1000?(v/1000).toFixed(1)+'k':String(Math.round(v));
 const hs=s=>{let x=5381;for(const c of s)x=(x*33^c.charCodeAt(0))>>>0;return String(x)};
 const SUBJ=["Mathematics","Accounting","Economics","Business Studies","Physical Sciences","Life Sciences"],AB=["Math","Acc","Eco","BS","PS","LS"];
-const DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],TM=["15:00","16:30","18:00"],K='nova_forge_v2';
+const DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],TM=["14:00","16:00","18:00"],K='nova_forge_v2';
 let U=[],B=[],ME=null,PARAS=[],stream=null;
-const S={v:'home',t:'browse',reg:true,role:'student',p:{r:15,c:25,F:800,k:10},inc:true,msg:null,bk:null,rep:null,bid:null};
+const S={v:'home',t:'browse',reg:true,role:'student',p:{r:15,M:150,H:30,T:35,host:500,mkt:1100,house:850,k:40},inc:true,msg:null,bk:null,rep:null,bid:null};
 const load=()=>{try{const j=JSON.parse(localStorage.getItem(K));if(j){U=j.U||[];B=j.B||[]}}catch(e){}};load();
 try{ME=sessionStorage.getItem('nf_me')}catch(e){}
 if(!U.length)U=[['Thabo M.',SUBJ[0],220,'thabo'],['Lerato K.',SUBJ[1],260,'lerato'],['Sipho N.',SUBJ[2],250,'sipho']].map((a,i)=>({id:'d'+i,role:'tutor',name:a[0],email:a[3]+'@novaforge.demo',pw:hs('nova123'),subject:a[1],rate:a[2],av:{d:[1,2,3,4,5],t:TM}}));
@@ -213,9 +213,12 @@ const me=()=>U.find(u=>u.id===ME),usr=id=>U.find(u=>u.id===id);
 const fd=d=>new Date(d+'T12:00').toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'});
 const vat=()=>S.p.r/100;
 const avg=t=>{const r=B.filter(b=>b.tid===t.id&&b.rating).map(b=>b.rating);return r.length?r.reduce((a,b)=>a+b,0)/r.length:0};
-function slots(t){const o=[];for(let i=1;i<30&&o.length<15;i++){const d=new Date();d.setDate(d.getDate()+i);if(!t.av.d.includes(d.getDay()))continue;
+const MINH=2;
+const sn=t=>{const a=t.split(':');return +a[0]+ +a[1]/60};
+function slots(t,hrs){hrs=hrs||MINH;const o=[];for(let i=1;i<30&&o.length<15;i++){const d=new Date();d.setDate(d.getDate()+i);if(!t.av.d.includes(d.getDay()))continue;
  const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
- t.av.t.forEach(h=>{if(!B.some(b=>b.tid===t.id&&b.d===k&&b.h===h&&b.status!=='declined'))o.push([k,h])})}return o.slice(0,15)}
+ t.av.t.forEach(h=>{const st=sn(h);if(!B.some(b=>b.tid===t.id&&b.d===k&&b.status!=='declined'&&sn(b.h)<st+hrs&&st<sn(b.h)+(b.hrs||1)))o.push([k,h])})}return o.slice(0,15)}
+const quote=hrs=>{const P=S.p,ym=new Date().toISOString().slice(0,7),due=!B.some(b=>b.sid===ME&&b.pm===ym&&b.sub&&b.status!=='declined'),sub=due?P.M:0,hf=hrs*P.H,p=sub+hf,v=p*vat();return{due,sub,hf,p,v,t:p+v,ym}};
 const luhn=s=>{let t=0,d=false;for(let i=s.length-1;i>=0;i--){let n=+s[i];if(d){n*=2;if(n>9)n-=9}t+=n;d=!d}return t%10===0};
 const msg=()=>S.msg?`<p class="msg ${S.msg[0]}" role="alert">${S.msg[1]}</p>`:'';
 
@@ -238,7 +241,7 @@ function auth(){const t=S.role==='tutor';
 <div class="card ${t?'t':'s'}">${S.reg?`<div class="grid"><label>Email<input id="le" type="email" value="${esc(S.pre||'')}"></label><label>Password<input id="lp" type="password"></label></div><button class="btn" data-act="login">Log in</button>
 ${t?'<p class="note">Demo tutor: thabo@novaforge.demo, password nova123</p>':''}`:
 `<div class="grid"><label>Full name<input id="cn" maxlength="40"></label><label>Email<input id="ce" type="email"></label><label>Password (6+ characters)<input id="cp" type="password"></label>
-${t?`<label>Subject<select id="cs">${SUBJ.map(s=>`<option>${s}</option>`).join('')}</select></label><label>Hourly rate (R, excl. VAT)<input id="cr" type="number" min="50" max="1000" value="200"></label>`:
+${t?`<label>Subject<select id="cs">${SUBJ.map(s=>`<option>${s}</option>`).join('')}</select></label>`:
 `<label>Grade<select id="cg"><option>10</option><option>11</option><option>12</option></select></label>`}</div><button class="btn" data-act="create">Create account</button><p class="note">Demo only: passwords are scrambled in this browser, never sent anywhere.</p>`}</div>`}
 
 function dash(){const m=me();if(!m){S.v='home';return home()}
@@ -246,23 +249,25 @@ function dash(){const m=me();if(!m){S.v='home';return home()}
  return `<h2>${st?'Student':'Tutor'} dashboard</h2><div class="sub">${T.map(a=>`<button class="tab" aria-selected="${S.t===a[0]}" data-act="tab" data-t="${a[0]}">${a[1]}</button>`).join('')}</div>${msg()}`+({browse,mine,req,sess,prof}[S.t]||browse)(m)}
 
 function browse(){
- const sub=S.f||'',k=S.k||'rate',dir=S.o==='desc'?-1:1;
- const a=U.filter(u=>u.role==='tutor'&&(!sub||u.subject===sub)).sort((u,w)=>(k==='name'?u.name.localeCompare(w.name):k==='rating'?avg(u)-avg(w):u.rate-w.rate)*dir);
- let h=`<div class="row"><label>Subject<select data-chg="f"><option value="">All subjects</option>${SUBJ.map(s=>`<option ${s===sub?'selected':''}>${s}</option>`).join('')}</select></label>
-<label>Sort by<select data-chg="k"><option value="rate" ${k==='rate'?'selected':''}>Price</option><option value="rating" ${k==='rating'?'selected':''}>Rating</option><option value="name" ${k==='name'?'selected':''}>Tutor name</option></select></label>
+ const sub=S.f||'',k=S.k||'rating',dir=S.o==='desc'?-1:1;
+ const a=U.filter(u=>u.role==='tutor'&&(!sub||u.subject===sub)).sort((u,w)=>(k==='name'?u.name.localeCompare(w.name):k==='slots'?slots(u).length-slots(w).length:avg(u)-avg(w))*dir);
+ let h=`<p class="note">Pricing: R${S.p.M} monthly subscription (charged once a month) + R${S.p.H} per tutoring hour. Minimum ${MINH} hours per booking. ${S.p.r}% VAT is added.</p><div class="row"><label>Subject<select data-chg="f"><option value="">All subjects</option>${SUBJ.map(s=>`<option ${s===sub?'selected':''}>${s}</option>`).join('')}</select></label>
+<label>Sort by<select data-chg="k"><option value="rating" ${k==='rating'?'selected':''}>Rating</option><option value="name" ${k==='name'?'selected':''}>Tutor name</option><option value="slots" ${k==='slots'?'selected':''}>Free slots</option></select></label>
 <label>Order<select data-chg="o"><option value="asc">Ascending</option><option value="desc" ${dir<0?'selected':''}>Descending</option></select></label></div>`;
  if(S.bk)h+=bookp();
- return h+`<div class="list">${a.map(t=>{const n=slots(t).length;return `<div class="card s"><h3>${esc(t.name)}</h3><p>${t.subject}</p><p><b>${R(t.rate)}</b> + VAT per hour</p><p>Rating: ${avg(t)?avg(t).toFixed(1):'New'}</p><p>${n} free slots</p><button class="btn" data-act="book" data-id="${t.id}" ${n?'':'disabled'}>Book a session</button></div>`}).join('')||'<p>No tutors for this subject yet.</p>'}</div>`}
+ return h+`<div class="list">${a.map(t=>{const n=slots(t,MINH).length;return `<div class="card s"><h3>${esc(t.name)}</h3><p>${t.subject}</p><p><b>R${S.p.H}</b> per hour + VAT</p><p>Rating: ${avg(t)?avg(t).toFixed(1):'New'}</p><p>${n} free slots</p><button class="btn" data-act="book" data-id="${t.id}" ${n?'':'disabled'}>Book a session</button></div>`}).join('')||'<p>No tutors for this subject yet.</p>'}</div>`}
 
-function bookp(){const t=usr(S.bk.tid),p=t.rate,v=p*vat();
- let h=`<div class="card s"><h3>Book ${esc(t.name)} (${t.subject})</h3><p>Price: ${R(p)} + ${R(v)} VAT = <b>${R(p+v)}</b></p>`;
- if(S.bk.step===1)h+=`<label>Choose a slot<select id="sl">${slots(t).map(s=>`<option value="${s[0]}|${s[1]}">${fd(s[0])} at ${s[1]}</option>`).join('')}</select></label><button class="btn" data-act="topay">Enter payment details</button>`;
- else h+=`<p>${fd(S.bk.d)} at ${S.bk.h}</p><div class="grid"><label>Card number<input id="cc" inputmode="numeric" autocomplete="off" placeholder="4242 4242 4242 4242"></label><label>Expiry (MM/YY)<input id="ce2" placeholder="12/28"></label><label>CVV<input id="cv" inputmode="numeric" maxlength="3"></label></div><button class="btn" data-act="pay">Pay ${R(p+v)}</button><p class="note">Demo payment: card details are checked in your browser and never stored. Test card 4242 4242 4242 4242, any future expiry, any 3 digits.</p>`;
+function bookp(){const t=usr(S.bk.tid),hr=S.bk.hrs||MINH,q=quote(hr);
+ let h=`<div class="card s"><h3>Book ${esc(t.name)} (${t.subject})</h3><p>${hr} hours × ${R(S.p.H)} = ${R(q.hf)}</p><p>Monthly subscription: ${q.due?R(q.sub):'already paid this month'}</p><p>Subtotal ${R(q.p)} + ${R(q.v)} VAT = <b>${R(q.t)}</b></p>`;
+ if(S.bk.step===1){const sl=slots(t,hr);
+  h+=`<label>Hours (minimum ${MINH})<select data-hrs="1">${[0,1,2,3,4].map(n=>MINH+n).map(n=>`<option ${n===hr?'selected':''}>${n}</option>`).join('')}</select></label>`;
+  h+=sl.length?`<label>Choose a start time<select id="sl">${sl.map(x=>`<option value="${x[0]}|${x[1]}">${fd(x[0])} at ${x[1]}</option>`).join('')}</select></label><button class="btn" data-act="topay">Enter payment details</button>`:'<p class="msg err">No free slots for that many hours. Try fewer hours.</p>'}
+ else h+=`<p>${fd(S.bk.d)} at ${S.bk.h} for ${hr} hours</p><div class="grid"><label>Card number<input id="cc" inputmode="numeric" autocomplete="off" placeholder="4242 4242 4242 4242"></label><label>Expiry (MM/YY)<input id="ce2" placeholder="12/28"></label><label>CVV<input id="cv" inputmode="numeric" maxlength="3"></label></div><button class="btn" data-act="pay">Pay ${R(q.t)}</button><p class="note">Demo payment: card details are checked in your browser and never stored. Test card 4242 4242 4242 4242, any future expiry, any 3 digits.</p>`;
  return h+`<button class="btn alt" data-act="cancelbk">Cancel</button></div>`}
 
 function mine(m){const a=B.filter(b=>b.sid===m.id).sort((u,w)=>w.id-u.id);
- return `<div class="list">${a.map(b=>{const t=usr(b.tid),tot=t.rate*(1+vat());
- let s=`<div class="card s"><h3>${esc(t.name)}, ${t.subject}</h3><p>${fd(b.d)} at ${b.h}, ${R(tot)} paid</p>`;
+ return `<div class="list">${a.map(b=>{const t=usr(b.tid),tot=(b.p!=null?b.p:(t.rate||0))*(1+vat());
+ let s=`<div class="card s"><h3>${esc(t.name)}, ${t.subject}</h3><p>${fd(b.d)} at ${b.h} for ${b.hrs||1} h</p><p>${R(tot)} paid incl. VAT</p>`;
  if(b.status==='pending')s+='<p><span class="tag">Waiting for approval</span></p><p>Booking confirmed and the tutor has been notified.</p>';
  if(b.status==='declined')s+=`<p><span class="tag">Declined</span></p><p>The tutor could not take this request. ${R(tot)} is refunded (demo).</p>`;
  if(b.status==='approved'||b.status==='done'){s+=`<p><span class="tag">${b.status==='done'?'Completed':'Approved'}</span></p>`;
@@ -270,22 +275,23 @@ function mine(m){const a=B.filter(b=>b.sid===m.id).sort((u,w)=>w.id-u.id);
   if(b.att&&!b.rating)s+=`<label>Rate this session (1 to 10)<select id="rt${b.id}">${[1,2,3,4,5,6,7,8,9,10].map(v=>`<option>${v}</option>`).join('')}</select></label><label>Feedback<textarea id="fb${b.id}" rows="2"></textarea></label><button class="btn" data-act="rate" data-id="${b.id}">Submit feedback</button>`;
   if(b.rating)s+=`<p>Your rating: <b>${b.rating}/10</b>${b.fb?`, "${esc(b.fb)}"`:''}</p>`;
   if(b.report)s+=`<p><b>Progress report</b></p><p>Topic: ${esc(b.report.topic)}</p><p>Score: ${b.report.score}/10</p><p>Notes: ${esc(b.report.notes)}</p>`;
-  else if(b.status==='done'===false&&b.att)s+='<p class="note">Your progress report will appear here once your tutor submits it.</p>'}
+  else if(b.att)s+='<p class="note">Your progress report will appear here once your tutor submits it.</p>'}
  return s+'</div>'}).join('')||'<p>No sessions yet. Choose Browse and book to start.</p>'}</div>`}
 
 function req(m){const a=B.filter(b=>b.tid===m.id&&b.status==='pending');
- return `<p class="lead">Matching students with approved payment, subject and time.</p><div class="list">${a.map(b=>{const s=usr(b.sid);return `<div class="card t"><h3>${esc(s.name)}, Grade ${s.grade}</h3><p>${m.subject}</p><p>${fd(b.d)} at ${b.h}</p><p><span class="tag">Payment approved</span></p><button class="btn" data-act="appr" data-id="${b.id}" data-y="1">Approve</button><button class="btn alt" data-act="appr" data-id="${b.id}" data-y="0">Decline</button></div>`}).join('')||'<p>No matching requests right now.</p>'}</div>`}
+ return `<p class="lead">Matching students with approved payment, subject and time.</p><div class="list">${a.map(b=>{const s=usr(b.sid);return `<div class="card t"><h3>${esc(s.name)}, Grade ${s.grade}</h3><p>${m.subject}</p><p>${fd(b.d)} at ${b.h} for ${b.hrs||1} hours</p><p><span class="tag">Payment approved</span></p><button class="btn" data-act="appr" data-id="${b.id}" data-y="1">Approve</button><button class="btn alt" data-act="appr" data-id="${b.id}" data-y="0">Decline</button></div>`}).join('')||'<p>No matching requests right now.</p>'}</div>`}
 
 function sess(m){const a=B.filter(b=>b.tid===m.id&&(b.status==='approved'||b.status==='done')).sort((u,w)=>w.id-u.id);
- return `<div class="list">${a.map(b=>{const s=usr(b.sid);let h=`<div class="card t"><h3>${esc(s.name)}, Grade ${s.grade}</h3><p>${fd(b.d)} at ${b.h}</p><p><span class="tag">${b.status==='done'?'Report sent':'Lesson confirmed'}</span></p>`;
+ const hT=a.reduce((x,b)=>x+(b.hrs||1),0),ms=new Set(a.map(b=>b.sid)).size,P=S.p,tp=(P.M*ms+hT*P.H)*P.T/100;
+ return `<p class="lead">Your payment so far = (R${P.M} × ${ms} students + ${hT} hours × R${P.H}) × ${P.T}% = <b>${R(tp)}</b></p><div class="list">${a.map(b=>{const s=usr(b.sid);let h=`<div class="card t"><h3>${esc(s.name)}, Grade ${s.grade}</h3><p>${fd(b.d)} at ${b.h}, ${b.hrs||1} hours</p><p><span class="tag">${b.status==='done'?'Report sent':'Lesson confirmed'}</span></p>`;
  if(b.status==='approved'){h+=`<button class="btn" data-act="join" data-id="${b.id}">Start live session</button><button class="btn alt" data-act="repo" data-id="${b.id}">Write progress report</button>`;
   if(S.rep===b.id)h+=`<label>Topic covered<input id="rtp" maxlength="80"></label><label>Student score (0 to 10)<input id="rsc" type="number" min="0" max="10" value="7"></label><label>Feedback<textarea id="rnt" rows="2"></textarea></label><button class="btn" data-act="reps" data-id="${b.id}">Send report to student</button>`}
  else h+=`<p>Score ${b.report.score}/10, ${esc(b.report.topic)}</p>${b.rating?`<p>Student rating: ${b.rating}/10</p>`:''}`;
  return h+'</div>'}).join('')||'<p>No approved sessions yet.</p>'}</div>`}
 
-function prof(m){return `<div class="card t"><div class="grid"><label>Subject<select id="ps">${SUBJ.map(s=>`<option ${s===m.subject?'selected':''}>${s}</option>`).join('')}</select></label><label>Hourly rate (R, excl. VAT)<input id="pr" type="number" min="50" max="1000" value="${m.rate}"></label></div>
+function prof(m){return `<div class="card t"><div class="grid"><label>Subject<select id="ps">${SUBJ.map(s=>`<option ${s===m.subject?'selected':''}>${s}</option>`).join('')}</select></label></div>
 <p><b>Available days</b></p>${[1,2,3,4,5,6].map(d=>`<label class="ck"><input type="checkbox" class="pd" value="${d}" ${m.av.d.includes(d)?'checked':''}>${DN[d]}</label>`).join('')}
-<p><b>Available times</b></p>${TM.map(t=>`<label class="ck"><input type="checkbox" class="pt" value="${t}" ${m.av.t.includes(t)?'checked':''}>${t}</label>`).join('')}<br><button class="btn" data-act="psave">Save profile</button></div>`}
+<p><b>Available start times (each session is at least ${MINH} hours)</b></p>${TM.map(t=>`<label class="ck"><input type="checkbox" class="pt" value="${t}" ${m.av.t.includes(t)?'checked':''}>${t}</label>`).join('')}<br><button class="btn" data-act="psave">Save profile</button></div>`}
 
 function live(){const b=B.find(x=>x.id===S.bid),m=me();if(!b||!m)return home();const o=usr(m.role==='tutor'?b.sid:b.tid);
  return `<h2>Live session with ${esc(o.name)}</h2><p class="lead">${usr(b.tid).subject}, ${fd(b.d)} at ${b.h}</p>
@@ -294,36 +300,44 @@ function live(){const b=B.find(x=>x.id===S.bid),m=me();if(!b||!m)return home();c
 <button class="btn" data-act="leave">Leave session</button>`}
 
 /* ---------- insights and report ---------- */
-const SAMPLE=[8,9,7,10,6,9,8,7,9,10,5,8,9,7,8].map((r,i)=>({s:SUBJ[i%6],p:[220,260,250,240,260,240][i%6],r}));
+const SAMPLE=[8,9,7,10,6,9,8,7,9,10,5,8,9,7,8];
 function calc(){
- const P=S.p,r=P.r/100,c=P.c/100,F=P.F,k=P.k;
- let A=B.filter(b=>b.status==='approved'||b.status==='done').map(b=>{const t=usr(b.tid);return{s:t.subject,p:t.rate,r:b.rating||0}});
- if(S.inc)A=SAMPLE.concat(A);const n=A.length;if(!n)return null;
- const rev=A.reduce((a,b)=>a+b.p,0),pb=rev/n,vt=r*rev,com=c*rev,prof=com-F,be=c*pb>0?Math.ceil(F/(c*pb)):null;
- const fr=[['Sessions','n',n],['Mean price per session','p̄ = Rev ÷ n',R(pb)],['Revenue (excl. VAT)','Rev = Σp',R(rev)],['VAT','V = r · Rev',R(vt)],['Paid by students','Rev(1 + r)',R(rev+vt)],['Platform commission','c · Rev',R(com)],['Tutor payouts','(1 − c) · Rev',R(rev-com)],['Profit this month','P = c · Rev − F',R(prof)],['Break-even sessions','x* = ⌈F ÷ (c · p̄)⌉',be===null?'none':be]];
- const d=A.map(b=>b.r).filter(v=>v>0).sort((a,b)=>a-b),m=d.length;let sr=[],ST=null;
- if(m){const mean=d.reduce((a,b)=>a+b,0)/m,med=m%2?d[(m-1)/2]:(d[m/2-1]+d[m/2])/2,hi=d.filter(v=>v>=8).length;ST={m,mean,med,rg:d[m-1]-d[0],mn:d[0],mx:d[m-1],pc:hi/m*100};
-  sr=[['Number of ratings','n',m],['Mean','x̄ = Σx ÷ n',nf(mean)],['Median','middle of the sorted list',nf(med)],['Range','max − min = '+d[m-1]+' − '+d[0],ST.rg],['Rated 8 or higher','count ≥ 8 ÷ n × 100',nf(ST.pc,1)+'%']]}
- const cnt=SUBJ.map(s=>A.filter(b=>b.s===s).length),lab=[],val=[];let tot=0;
- for(let i=1;i<=12;i++){const x=Math.max(0,Math.round(n+k*(i-1))),p=c*pb*x-F;lab.push('M'+i);val.push(p);tot+=p}
- PARAS=[`Nova Forge is an online tutoring platform. Monthly profit P is a linear function of the independent variable x, the number of sessions, with parameters commission c = ${nf(c*100,1)}%, fixed cost F = ${R(F)}, VAT rate r = ${nf(r*100,1)}% and mean session price p̄ = ${R(pb)}. So P(x) = c · p̄ · x − F.`,
- `The platform recorded n = ${n} sessions (discrete values) with revenue ${R(rev)} excluding VAT. VAT is ${R(vt)}, students paid ${R(rev+vt)}, the commission is ${R(com)} and the profit is ${R(prof)}. `+(be===null?'There is no break-even point.':`The break-even point is x* = ${be} sessions.`),
- `With growth of k = ${k} sessions per month, total profit over 12 months is ${R(tot)}.`,
+ const P=S.p,r=P.r/100,M=P.M,H=P.H,sh=P.T/100,F=P.host+P.mkt+P.house,k=P.k;
+ const real=B.filter(b=>b.status==='approved'||b.status==='done');
+ let s=B.filter(b=>b.sub&&b.status!=='declined').length,m=new Set(real.map(b=>b.sid)).size,h=real.reduce((a,b)=>a+(b.hrs||1),0);
+ const rt=real.map(b=>b.rating||0);
+ if(S.inc){s+=120;m+=40;h+=400}
+ PARAS=[];if(!s&&!h)return null;
+ const tsf=h*H,rev=s*M+tsf,vt=r*rev,tp=(M*m+tsf)*sh,cost=tp+F,prof=rev-cost;
+ const sl=H*(1-sh),c0=M*s-sh*M*m-F,be=sl>0?(c0>=0?0:Math.ceil(-c0/sl)):null;
+ const fr=[['Subscribers (s)','monthly subscriptions paid',s],['Students tutored (m)','distinct students',m],['Hours tutored (h)','Σ hours booked',h],
+  ['Tutoring service fee','tsf = h × HOURLY_RATE',R(tsf)],['Revenue','Rev = s × MONTHLY_FEE + tsf',R(rev)],['VAT amount','V = Rev × VAT_RATE',R(vt)],
+  ['Tutor payment','TP = (MONTHLY_FEE × m + tsf) × '+nf(sh),R(tp)],['Monthly costs','C = TP + hosting + marketing + housing',R(cost)],['Profit','P = Rev − C',R(prof)],
+  ['Break-even hours','smallest whole h with P(h) ≥ 0',be===null?'none':be+' hours']];
+ const d=(S.inc?SAMPLE:[]).concat(rt).filter(v=>v>0).sort((a,b)=>a-b),mm=d.length;let sr=[],ST=null;
+ if(mm){const mean=d.reduce((a,b)=>a+b,0)/mm,med=mm%2?d[(mm-1)/2]:(d[mm/2-1]+d[mm/2])/2,hi=d.filter(v=>v>=8).length;ST={m:mm,mean,med,rg:d[mm-1]-d[0],mn:d[0],mx:d[mm-1],pc:hi/mm*100};
+  sr=[['Number of ratings','n',mm],['Mean','x̄ = Σx ÷ n',nf(mean)],['Median','middle of the sorted list',nf(med)],['Range','max − min = '+d[mm-1]+' − '+d[0],ST.rg],['Rated 8 or higher','count ≥ 8 ÷ n × 100',nf(ST.pc,1)+'%']]}
+ const lab=[],val=[];let tot=0;
+ for(let i=1;i<=12;i++){const hi=Math.max(0,Math.round(h+k*(i-1))),p=c0+sl*hi;lab.push('M'+i);val.push(p);tot+=p}
+ PARAS=[`Nova Forge's monthly profit P is a linear function of the independent variable h, the number of hours tutored. The parameters are the monthly fee R${M}, the hourly rate R${H}, the VAT rate ${P.r}%, the tutor share ${P.T}% and fixed costs F = ${R(F)} (hosting ${R(P.host)}, marketing ${R(P.mkt)}, housing ${R(P.house)}). With s = ${s} subscribers and m = ${m} students tutored, P(h) = ${nf(sl)}h ${c0<0?'−':'+'} ${nf(Math.abs(c0))}.`,
+ `For h = ${h} hours (a discrete value, with a minimum of ${MINH} hours per booking) the tutoring service fee is ${R(tsf)} and revenue is ${R(rev)}. VAT is ${R(vt)}, the tutor payment is ${R(tp)}, monthly costs are ${R(cost)} and profit is ${R(prof)}. `+(be===null?'There is no break-even point.':`The break-even point is h* = ${be} hours.`),
+ `With growth of k = ${k} hours per month, total profit over 12 months is ${R(tot)}.`,
  ST?`The ${ST.m} session ratings have a mean of ${nf(ST.mean)}, a median of ${nf(ST.med)} and a range of ${ST.rg} (${ST.mn} to ${ST.mx}). ${nf(ST.pc,1)}% of ratings were 8 or higher.`:'No session ratings have been recorded yet.',
- 'Constraints: x is a non-negative whole number and 0 ≤ r, c ≤ 1.'];
- return{fr,sr,cnt,lab,val}}
+ `Constraints: h is a non-negative whole number, every booking is at least ${MINH} hours, and the VAT rate and tutor share are between 0% and 100%.`];
+ return{fr,sr,bl:['Rev','VAT','Tutors','Costs','Profit'],bv:[rev,vt,tp,cost,prof],lab,val,sl,c0}}
 const tbl=(a,h)=>`<div class="scroll"><table><thead><tr><th>${h}</th><th>Expression</th><th>Value</th></tr></thead><tbody>${a.map(x=>`<tr><td>${x[0]}</td><td class="f">${x[1]}</td><td><b>${x[2]}</b></td></tr>`).join('')}</tbody></table></div>`;
 function ins(){const D=calc(),P=S.p;
- return `<h2>Insights</h2><p class="lead">Every figure comes from the sessions and ratings on this site.</p>
-<div class="card"><div class="grid"><label>VAT rate r (%)<input type="number" data-p="r" value="${P.r}" min="0" max="100"></label><label>Commission c (%)<input type="number" data-p="c" value="${P.c}" min="0" max="100"></label><label>Fixed cost F per month (R)<input type="number" data-p="F" value="${P.F}" min="0"></label><label>Growth k (sessions per month)<input type="number" data-p="k" value="${P.k}"></label></div>
-<label class="ck" style="margin-top:10px"><input type="checkbox" data-inc="1" ${S.inc?'checked':''}>Include 15 sample sessions with ratings</label></div>`+
+ const f=(k,l)=>`<label>${l}<input type="number" data-p="${k}" value="${P[k]}" min="0"></label>`;
+ return `<h2>Insights</h2><p class="lead">Figures follow the Nova Forge revenue, cost and profit model. Hours, subscribers and students come from the bookings on this site.</p>
+<div class="card"><div class="grid">${f('M','Monthly fee (R)')}${f('H','Hourly rate (R)')}${f('r','VAT rate (%)')}${f('T','Tutor share (%)')}${f('host','Hosting maintenance (R)')}${f('mkt','Digital marketing (R)')}${f('house','Housing maintenance (R)')}${f('k','Growth (hours per month)')}</div>
+<label class="ck" style="margin-top:10px"><input type="checkbox" data-inc="1" ${S.inc?'checked':''}>Include the worked example (120 subscribers, 400 hours, 40 students) and 15 sample ratings</label></div>`+
  (D?`<h3 style="margin-top:16px">Finance</h3>${tbl(D.fr,'Quantity')}<h3>Rating statistics</h3>${D.sr.length?tbl(D.sr,'Statistic'):'<p>No ratings yet.</p>'}
-<div class="card"><h3>Sessions per subject</h3>${chart(AB,D.cnt,v=>String(Math.round(v)),'Subject','Sessions')}<p class="note">Math = Mathematics, Acc = Accounting, Eco = Economics, BS = Business Studies, PS = Physical Sciences, LS = Life Sciences.</p></div>
-<div class="card" style="margin-top:12px"><h3>Profit growth over 12 months</h3>${chart(D.lab,D.val,kf,'Month','Profit (R)')}<p class="note">P(x<sub>i</sub>) = c · p̄ · x<sub>i</sub> − F, where x<sub>i</sub> = n + k(i − 1).</p></div>`:'<p>No sessions yet. Include the sample data or complete a booking.</p>')}
-function report(){calc();return `<h2>Project report summary</h2><p class="lead">Written automatically from the Insights figures.</p><div class="card">${PARAS.map(t=>`<p>${t}</p>`).join('')||'<p>No sessions to report on yet.</p>'}</div>
+<div class="card"><h3>Monthly financial summary</h3>${chart(D.bl,D.bv,kf,'Item','Amount (R)')}<p class="note">Rev = revenue, VAT = VAT amount, Tutors = tutor payment, Costs = monthly costs.</p></div>
+<div class="card" style="margin-top:12px"><h3>Profit growth over 12 months</h3>${chart(D.lab,D.val,kf,'Month','Profit (R)')}<p class="note">P(h<sub>i</sub>) = ${nf(D.sl)} · h<sub>i</sub> ${D.c0<0?'−':'+'} ${nf(Math.abs(D.c0))}, where h<sub>i</sub> = h + k(i − 1).</p></div>`:'<p>No bookings yet. Include the worked example or complete a booking.</p>')}
+function report(){calc();return `<h2>Project report summary</h2><p class="lead">Written automatically from the Insights figures.</p><div class="card">${PARAS.map(t=>`<p>${t}</p>`).join('')||'<p>No data to report on yet.</p>'}</div>
 <div class="noprint"><button class="btn" data-act="print">Print or save as PDF</button><button class="btn alt" data-act="copy" id="cp">Copy text</button></div>
-<h3 style="margin-top:18px">Mathematical terms used</h3><div class="card"><p><b>Independent variable:</b> x, sessions per month. <b>Dependent variable:</b> P(x), monthly profit. <b>Parameters:</b> r, c, F, k and each tutor's rate. <b>Linear function:</b> P(x) = c · p̄ · x − F. <b>Constraints:</b> x ≥ 0 and 0 ≤ r, c ≤ 1. <b>Discrete values:</b> sessions and ratings are whole numbers.</p></div>
-<p class="note">Group: Ramalebane J.P, Noko P.A.S, Kunene S.L.A, Vuma M, Mguni M.E, Nemamilwe A, Shozi S, Bapela M, Chauke R.N</p>`}
+<h3 style="margin-top:18px">Mathematical terms used</h3><div class="card"><p><b>Independent variable:</b> h, hours tutored per month. <b>Dependent variable:</b> P(h), monthly profit. <b>Parameters:</b> monthly fee, hourly rate, VAT rate, tutor share, fixed costs and growth k. <b>Linear function:</b> P(h) = H(1 − share) · h + constant, a straight line. <b>Constraints:</b> h ≥ 0, at least 2 hours per booking, and rates between 0% and 100%. <b>Discrete values:</b> hours, subscribers and ratings are whole numbers.</p></div>
+<p class="note">Group: Ramalebane J.P, Noko P.A.S, Kunene S.L.A, Vuma M, Mguni M.E, Nemamilwe A, Shozi S, Bapela M, Chauke R.N, Nyawo S</p>`}
 
 /* ---------- render ---------- */
 function render(){const m=me();
@@ -343,15 +357,15 @@ const act={
  create(){const n=$('cn').value.trim(),e=$('ce').value.trim().toLowerCase(),p=$('cp').value,t=S.role==='tutor';
   if(!n||!e.includes('@')||p.length<6)return S.msg=['err','Enter your name, a valid email and a password of 6 or more characters.'],render();
   if(U.some(u=>u.email===e))return S.msg=['err','That email is already registered. Choose Yes, log in.'],render();
-  const rt=t?+$('cr').value:0;if(t&&(rt<50||rt>1000))return S.msg=['err','Choose a rate between R50 and R1000.'],render();
-  U.push(t?{id:'u'+Date.now(),role:'tutor',name:n,email:e,pw:hs(p),subject:$('cs').value,rate:rt,av:{d:[1,2,3,4,5],t:TM}}:{id:'u'+Date.now(),role:'student',name:n,email:e,pw:hs(p),grade:$('cg').value});
+  
+  U.push(t?{id:'u'+Date.now(),role:'tutor',name:n,email:e,pw:hs(p),subject:$('cs').value,av:{d:[1,2,3,4,5],t:TM}}:{id:'u'+Date.now(),role:'student',name:n,email:e,pw:hs(p),grade:$('cg').value});
   save();S.reg=true;S.pre=e;S.msg=['ok','Account created. Log in to continue.'];render()},
  login(){const u=U.find(x=>x.role===S.role&&x.email===$('le').value.trim().toLowerCase()&&x.pw===hs($('lp').value));
   if(!u)return S.msg=['err','Email or password is not correct.'],render();
   ME=u.id;save();S.v='dash';S.t=u.role==='student'?'browse':'req';S.msg=null;render()},
  logout(){ME=null;save();S.v='home';S.msg=null;render()},
  tab(d){S.t=d.t;S.msg=null;S.bk=null;render()},
- book(d){S.bk={tid:d.id,step:1};S.msg=null;render()},
+ book(d){S.bk={tid:d.id,step:1,hrs:MINH};S.msg=null;render()},
  cancelbk(){S.bk=null;render()},
  topay(){const v=$('sl').value.split('|');S.bk.d=v[0];S.bk.h=v[1];S.bk.step=2;render()},
  pay(){const cc=$('cc').value.replace(/\s/g,''),ex=$('ce2').value.trim().match(/^(\d{2})\/(\d{2})$/),cv=$('cv').value;let bad='';
@@ -359,7 +373,8 @@ const act={
   else if(!ex||+ex[1]<1||+ex[1]>12||new Date(2000+ +ex[2],+ex[1],0,23,59)<new Date())bad='The expiry date is not valid or has passed.';
   else if(!/^\d{3}$/.test(cv))bad='The CVV must be 3 digits.';
   if(bad)return S.msg=['err',bad+' Check the details and try again.'],render();
-  const t=usr(S.bk.tid);B.push({id:Date.now(),sid:ME,tid:t.id,d:S.bk.d,h:S.bk.h,status:'pending'});save();
+  const t=usr(S.bk.tid),hr=S.bk.hrs||MINH,q=quote(hr);
+  B.push({id:Date.now(),sid:ME,tid:t.id,d:S.bk.d,h:S.bk.h,hrs:hr,p:q.p,sub:q.due,pm:q.ym,status:'pending'});save();
   S.bk=null;S.t='mine';S.msg=['ok','Payment accepted. Your booking is confirmed and matched to '+esc(t.name)+'. Waiting for approval.'];render()},
  appr(d){const b=B.find(x=>String(x.id)===d.id);b.status=d.y==='1'?'approved':'declined';save();S.msg=['ok',d.y==='1'?'Request approved. The student has been notified.':'Request declined. Next request shown.'];render()},
  join(d){S.bid=+d.id;S.v='live';render()},
@@ -371,9 +386,9 @@ const act={
  reps(d){const b=B.find(x=>String(x.id)===d.id),t=$('rtp').value.trim(),n=$('rnt').value.trim(),s=+$('rsc').value;
   if(!t||!n||s<0||s>10)return S.msg=['err','Add the topic, feedback and a score from 0 to 10.'],render();
   b.report={topic:t,notes:n,score:s};b.status='done';S.rep=null;save();S.msg=['ok','Report sent to the student dashboard.'];render()},
- psave(){const m=me(),r=+$('pr').value,d=[...document.querySelectorAll('.pd:checked')].map(x=>+x.value),t=[...document.querySelectorAll('.pt:checked')].map(x=>x.value);
-  if(r<50||r>1000||!d.length||!t.length)return S.msg=['err','Choose a rate from R50 to R1000, at least one day and at least one time.'],render();
-  m.subject=$('ps').value;m.rate=r;m.av={d,t};save();S.msg=['ok','Profile saved. Students can now book your free slots.'];render()},
+ psave(){const m=me(),d=[...document.querySelectorAll('.pd:checked')].map(x=>+x.value),t=[...document.querySelectorAll('.pt:checked')].map(x=>x.value);
+  if(!d.length||!t.length)return S.msg=['err','Choose at least one day and at least one start time.'],render();
+  m.subject=$('ps').value;m.av={d,t};save();S.msg=['ok','Profile saved. Students can now book your free slots.'];render()},
  print(){window.print()},
  copy(){const b=$('cp');(navigator.clipboard?navigator.clipboard.writeText(PARAS.join('\n\n')):Promise.reject()).then(()=>b.textContent='Copied').catch(()=>b.textContent='Copy failed');setTimeout(()=>b.textContent='Copy text',1800)}
 };
@@ -381,7 +396,8 @@ document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(
 document.addEventListener('change',e=>{const t=e.target;
  if(t.dataset.chg){S[t.dataset.chg]=t.value;render()}
  if(t.dataset.p){S.p[t.dataset.p]=parseFloat(t.value)||0;render()}
- if(t.dataset.inc){S.inc=t.checked;render()}});
+ if(t.dataset.inc){S.inc=t.checked;render()}
+ if(t.dataset.hrs){S.bk.hrs=+t.value;render()}});
 const sync=()=>{load();const a=document.activeElement;if(!a||!/INPUT|TEXTAREA|SELECT/.test(a.tagName))render()};
 window.addEventListener('storage',e=>{if(e.key===K)sync()});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
