@@ -219,6 +219,27 @@ input,select,textarea{background:#fff;border:1px solid rgba(0,0,0,.18)}
 :root[data-theme=dark] #themeBtn{background:#1C1C1E;border-color:rgba(255,255,255,.14);box-shadow:none}
 @supports not (backdrop-filter:blur(1px)){:root[data-theme=dark] :is(.bar,.hero,.card,.steps div,.msg,table){background:#1C1C1E}}
 @media(prefers-reduced-transparency:reduce){:root[data-theme=dark] :is(.bar,.hero,.card,.steps div,.msg,table,.sub .tab,#themeBtn){background:#1C1C1E}}
+
+/* Nova Helper chatbot */
+#chatBtn{position:fixed;right:76px;bottom:16px;z-index:20;width:50px;height:50px;border-radius:50%;padding:0;font-size:1.3rem;display:grid;place-items:center;cursor:pointer;color:var(--ink);background:#fff;border:1px solid rgba(0,0,0,.1);box-shadow:0 4px 14px rgba(0,0,0,.15)}
+#chatBox{position:fixed;right:16px;bottom:78px;z-index:21;width:min(360px,calc(100vw - 32px));height:min(480px,calc(100vh - 110px));display:flex;flex-direction:column;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:22px;box-shadow:0 16px 48px rgba(0,0,0,.2);overflow:hidden;color:var(--ink)}
+#chatBox[hidden]{display:none}
+.chead{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.08)}
+.chead button{background:none;border:0;font-size:1.1rem;cursor:pointer;color:var(--mut);min-width:44px;min-height:44px}
+#chatLog{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.mb{max-width:86%;padding:9px 13px;border-radius:16px;font-size:.95rem;line-height:1.4;background:#F0F2F5}
+.mb.u{align-self:flex-end;background:var(--a);color:#fff}
+.chips{display:flex;gap:6px;flex-wrap:wrap;padding:0 12px 8px}
+.chips button{border:1px solid rgba(0,0,0,.12);background:#fff;color:var(--ink);border-radius:999px;padding:6px 12px;font:500 .85rem Inter,system-ui,sans-serif;cursor:pointer}
+.cin{display:flex;gap:8px;padding:10px 12px;border-top:1px solid rgba(0,0,0,.08)}
+.cin input{flex:1}.cin button{border:0;border-radius:999px;background:var(--a);color:#fff;font-weight:600;padding:0 16px;cursor:pointer}
+:root[data-theme=dark] #chatBtn{background:#1C1C1E;border-color:rgba(255,255,255,.14);box-shadow:none}
+:root[data-theme=dark] #chatBox{background:#1C1C1E;border-color:rgba(255,255,255,.12)}
+:root[data-theme=dark] .chead,:root[data-theme=dark] .cin{border-color:rgba(255,255,255,.1)}
+:root[data-theme=dark] .mb{background:#2C2C2E}
+:root[data-theme=dark] .mb.u,:root[data-theme=dark] .cin button{background:var(--a);color:#06121F}
+:root[data-theme=dark] .chips button{background:#2C2C2E;border-color:rgba(255,255,255,.14);color:var(--ink)}
+@media print{#chatBtn,#chatBox{display:none}}
 </style>
 </head>
 <body>
@@ -233,13 +254,18 @@ const kf=v=>Math.abs(v)>=1000?(v/1000).toFixed(1)+'k':String(Math.round(v));
 const hs=s=>{let x=5381;for(const c of s)x=(x*33^c.charCodeAt(0))>>>0;return String(x)};
 const SUBJ=["Mathematics","Accounting","Economics","Business Studies","Physical Sciences","Life Sciences"],AB=["Math","Acc","Eco","BS","PS","LS"];
 const DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],TM=["14:00","16:00","18:00"],K='nova_forge_v2';
-let U=[],B=[],ME=null,PARAS=[],stream=null;
+let U=[],B=[],N=[],ME=null,PARAS=[],stream=null;
 const S={v:'home',t:'browse',reg:true,role:'student',p:{r:15,M:150,H:30,T:35,host:500,mkt:1100,house:850,k:40},inc:true,msg:null,bk:null,rep:null,bid:null};
-const load=()=>{try{const j=JSON.parse(localStorage.getItem(K));if(j){U=j.U||[];B=j.B||[]}}catch(e){}};load();
+const load=()=>{try{const j=JSON.parse(localStorage.getItem(K));if(j){U=j.U||[];B=j.B||[];N=j.N||[]}}catch(e){}};load();
 try{ME=sessionStorage.getItem('nf_me')}catch(e){}
+try{S.td=localStorage.getItem('nf_td')||''}catch(e){}
 if(!U.length)U=[['Thabo M.',SUBJ[0],220,'thabo'],['Lerato K.',SUBJ[1],260,'lerato'],['Sipho N.',SUBJ[2],250,'sipho']].map((a,i)=>({id:'d'+i,role:'tutor',name:a[0],email:a[3]+'@novaforge.demo',pw:hs('nova123'),subject:a[1],rate:a[2],av:{d:[1,2,3,4,5],t:TM}}));
-const save=()=>{try{localStorage.setItem(K,JSON.stringify({U,B}));ME?sessionStorage.setItem('nf_me',ME):sessionStorage.removeItem('nf_me')}catch(e){}};
+const save=()=>{try{localStorage.setItem(K,JSON.stringify({U,B,N}));ME?sessionStorage.setItem('nf_me',ME):sessionStorage.removeItem('nf_me')}catch(e){}};
 const me=()=>U.find(u=>u.id===ME),usr=id=>U.find(u=>u.id===id);
+const notify=(uid,text)=>{N.unshift({id:Date.now()+Math.random(),to:uid,text,ts:new Date().toLocaleString('en-ZA')});N=N.slice(0,100)};
+const unread=uid=>N.filter(n=>n.to===uid&&!n.read).length;
+function remind(m){const key=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'),t=new Date(),tm=new Date();tm.setDate(t.getDate()+1);let ch=false;
+ B.filter(b=>b.status==='approved'&&!b['rem'+m.id]&&(b.sid===m.id||b.tid===m.id)&&(b.d===key(t)||b.d===key(tm))).forEach(b=>{b['rem'+m.id]=true;ch=true;notify(m.id,'Reminder: session on '+fd(b.d)+' at '+b.h+' for '+(b.hrs||1)+' hours.')});if(ch)save()}
 const fd=d=>new Date(d+'T12:00').toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'});
 const vat=()=>S.p.r/100;
 const avg=t=>{const r=B.filter(b=>b.tid===t.id&&b.rating).map(b=>b.rating);return r.length?r.reduce((a,b)=>a+b,0)/r.length:0};
@@ -275,8 +301,8 @@ ${t?`<label>Subject<select id="cs">${SUBJ.map(s=>`<option>${s}</option>`).join('
 `<label>Grade<select id="cg"><option>10</option><option>11</option><option>12</option></select></label>`}</div><button class="btn" data-act="create">Create account</button><p class="note">Demo only: passwords are scrambled in this browser, never sent anywhere.</p>`}</div>`}
 
 function dash(){const m=me();if(!m){S.v='home';return home()}
- const st=m.role==='student',T=st?[['browse','Browse and book'],['mine','My sessions']]:[['req','Requests'],['sess','Sessions'],['prof','Profile and availability']];
- return `<h2>${st?'Student':'Tutor'} dashboard</h2><div class="sub">${T.map(a=>`<button class="tab" aria-selected="${S.t===a[0]}" data-act="tab" data-t="${a[0]}">${a[1]}</button>`).join('')}</div>${msg()}`+({browse,mine,req,sess,prof}[S.t]||browse)(m)}
+ remind(m);const st=m.role==='student',nt=['notes','Notifications'+(unread(m.id)?' ('+unread(m.id)+')':'')],T=st?[['browse','Browse and book'],['mine','My sessions'],nt]:[['req','Requests'],['sess','Sessions'],['prof','Profile and availability'],nt];
+ return `<h2>${st?'Student':'Tutor'} dashboard</h2><div class="sub">${T.map(a=>`<button class="tab" aria-selected="${S.t===a[0]}" data-act="tab" data-t="${a[0]}">${a[1]}</button>`).join('')}</div>${msg()}`+({browse,mine,req,sess,prof,notes}[S.t]||browse)(m)}
 
 function browse(){
  const sub=S.f||'',k=S.k||'rating',dir=S.o==='desc'?-1:1;
@@ -284,7 +310,7 @@ function browse(){
  let h=`<p class="note">Pricing: R${S.p.M} monthly subscription (charged once a month) + R${S.p.H} per tutoring hour. Minimum ${MINH} hours per booking. ${S.p.r}% VAT is added.</p><div class="row"><label>Subject<select data-chg="f"><option value="">All subjects</option>${SUBJ.map(s=>`<option ${s===sub?'selected':''}>${s}</option>`).join('')}</select></label>
 <label>Sort by<select data-chg="k"><option value="rating" ${k==='rating'?'selected':''}>Rating</option><option value="name" ${k==='name'?'selected':''}>Tutor name</option><option value="slots" ${k==='slots'?'selected':''}>Free slots</option></select></label>
 <label>Order<select data-chg="o"><option value="asc">Ascending</option><option value="desc" ${dir<0?'selected':''}>Descending</option></select></label></div>`;
- if(S.bk)h+=bookp();
+ h+='<p><button class="btn alt" data-act="auto">Match me automatically</button> <span class="note">Choose a subject first. We pick the tutor with the earliest free slot.</span></p>';if(S.bk)h+=bookp();
  return h+`<div class="list">${a.map(t=>{const n=slots(t,MINH).length;return `<div class="card s"><h3>${esc(t.name)}</h3><p>${t.subject}</p><p><b>R${S.p.H}</b> per hour + VAT</p><p>Rating: ${avg(t)?avg(t).toFixed(1):'New'}</p><p>${n} free slots</p><button class="btn" data-act="book" data-id="${t.id}" ${n?'':'disabled'}>Book a session</button></div>`}).join('')||'<p>No tutors for this subject yet.</p>'}</div>`}
 
 function bookp(){const t=usr(S.bk.tid),hr=S.bk.hrs||MINH,q=quote(hr);
@@ -329,8 +355,84 @@ function live(){const b=B.find(x=>x.id===S.bid),m=me();if(!b||!m)return home();c
 <div><canvas id="wb" width="600" height="300" aria-label="Shared whiteboard"></canvas><button class="btn alt" data-act="wclear">Clear whiteboard</button></div></div>
 <button class="btn" data-act="leave">Leave session</button>`}
 
+const tb=(h,rows)=>`<div class="scroll"><table><thead><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+function notes(m){const a=N.filter(n=>n.to===m.id);return `<div class="noprint"><button class="btn alt" data-act="readall">Mark all as read</button></div><div class="list">${a.map(n=>`<div class="card ${m.role==='student'?'s':'t'}"><p>${n.read?'':'<span class="tag">New</span> '}${esc(n.text)}</p><p class="note">${n.ts}</p></div>`).join('')||'<p>No notifications yet. They appear here automatically when bookings change.</p>'}</div>`}
+
+function about(){const P=S.p,first=P.M+2*P.H,v=first*P.r/100,later=2*P.H;
+ const team=[['Ramalebane J.P','Chief Executive Officer (CEO)'],['Noko P.A.S','Chief Technology Officer'],['Kunene S.L.A','Chief Financial Officer'],['Vuma M','Chief Marketing Officer'],['Mguni M.E','Chief Operations Officer'],['Nemamilwe A','Academic Lead'],['Shozi S','Head of Tutor Relations'],['Bapela M','Head of Student Support'],['Chauke R.N','Security and Compliance Officer'],['Nyawo S','Data and Analytics Lead']];
+ return `<div class="hero"><h1>Equal education, at a price that fits.</h1><p class="lead">Nova Forge is a tutoring company giving learners from underprivileged backgrounds in Limpopo equal access to quality education at an accessible price.</p></div>
+<div class="two"><div class="card s"><h3>Who we serve</h3><p>Grade 10 to 12 learners in Limpopo who cannot easily afford private lessons or travel to extra classes.</p><p>Subjects: Mathematics, Accounting, Economics, Business Studies, Physical Sciences and Life Sciences.</p></div>
+<div class="card t"><h3>What we offer</h3><p>Live online lessons with video and a shared whiteboard, a progress report after every session, and tutors approved for each request.</p></div></div>
+<h3 style="margin-top:20px">Simple, low pricing</h3>
+<div class="card"><p>R${P.M} monthly subscription (once a month) + R${P.H} per tutoring hour. Minimum 2 hours per booking. ${P.r}% VAT is added.</p><p>Your first 2-hour session in a month: ${R(first)} + ${R(v)} VAT = <b>${R(first+v)}</b>. Later 2-hour sessions that month: ${R(later)} + ${R(later*P.r/100)} VAT = <b>${R(later*(1+P.r/100))}</b>.</p></div>
+<h3 style="margin-top:20px">Our values</h3>
+<div class="card"><p><b>Access:</b> a learner's background should not decide the quality of help they get. <b>Affordability:</b> one low hourly rate for every subject. <b>Safety:</b> approved tutors and protected learner data. <b>Progress:</b> every session ends with feedback.</p></div>
+<h3 style="margin-top:20px">Leadership team</h3>${tb(['Name','Role'],team)}<p class="note">Draft titles, to be confirmed by the group.</p>`}
+
+function plan(){
+ const ok='<span class="tag">Implemented</span>',pl='<span class="tag">Planned</span>';
+ return `<h2>Company plan</h2><p class="lead">Business profile, marketing strategy, security, risk management and disaster recovery. Items marked Planned are not built yet. This page is for tutors only.</p>
+<h3>1. Business profile</h3>${tb(['Element','Nova Forge'],[
+['Mission','Equal education for learners from underprivileged backgrounds in Limpopo, at an accessible price.'],
+['Customers','Grade 10 to 12 learners in Limpopo and their parents or guardians.'],
+['Value proposition','Affordable live tutoring, one low hourly rate, progress reports, no travel needed.'],
+['Revenue','R150 monthly subscription per learner plus R30 per tutoring hour (VAT 15% added).'],
+['Main costs','Tutor payment (35% of fees), hosting R500, digital marketing R1,100 and housing maintenance R850 per month.'],
+['Key partners','Schools, teachers, libraries and community organisations in Limpopo, and a payment gateway.'],
+['Targets (draft)','120 subscribers, 40 tutored students and 400 tutored hours a month, as in the financial model.']])}
+<h3>2. Market and competition</h3>${tb(['Alternative','How Nova Forge differs'],[
+['In-person extra classes','No transport cost or travel time, and sessions fit around load-shedding with rescheduling.'],
+['Private home tutors','Lower fixed hourly rate and tutors approved per request.'],
+['Free online videos','Live, personal help, feedback and a progress report.'],
+['Established online tutoring platforms','Priced and designed for learners in underprivileged areas of Limpopo.']])}<p class="note">Draft analysis. Confirm with the group's survey and market research.</p>
+<h3>3. Marketing strategy</h3>${tb(['Mix','Plan'],[
+['Product','Live online tutoring in six subjects with a progress report after every session.'],
+['Price','R150 a month plus R30 an hour, minimum 2 hours per booking.'],
+['Place','Website on any phone, designed to use little data. Bookings and support through WhatsApp.'],
+['Promotion','WhatsApp class groups, Facebook community pages, posters at schools, libraries and community halls, teacher recommendations and a referral reward.']])}
+<h3>Monthly marketing budget (R1,100)</h3>${tb(['Item','Amount'],[['Facebook and Instagram community adverts','R500'],['WhatsApp data and printed flyers','R300'],['Referral rewards','R200'],['<b>Total</b>','<b>R1,100</b>']])}
+<h3>Six-month rollout (draft)</h3>${tb(['Month','Action','Measure'],[['1','Pilot with one or two schools','10 learners'],['2','Collect ratings and fix problems','Average rating of 8 or more'],['3','Start WhatsApp and Facebook adverts','30 subscribers'],['4','Teacher partnerships and referrals','60 subscribers'],['5','Add more tutors and subjects','90 subscribers'],['6','Review the numbers against the financial model','120 subscribers, 400 hours']])}
+<h3>4. Security</h3>${tb(['Control','Status'],[
+['Passwords are scrambled before saving (production would use a server-side method such as bcrypt)',ok],
+['Card details are checked in the browser and never stored',ok],
+['Students cannot open company pages and see only their own bookings (enforced in the interface now, on a server later)',ok],
+['Text typed by users is escaped to stop script injection',ok],
+['Secure HTTPS hosting',ok],
+['Payments through a PCI DSS compliant gateway',pl],
+['Multi-factor login for tutors',pl],
+['Tutor vetting: ID, qualifications and references',pl],
+['Parental consent for learners under 18 and a privacy policy (POPIA)',pl],
+['Encrypted cloud database with access control',pl]])}
+<h3>5. Risk management</h3>${tb(['Risk','Likelihood','Impact','Response'],[
+['Load-shedding or internet outage','High','Medium','Free rescheduling, low-data design, tutors may use mobile data'],
+['Leak of learner information','Low','High','Collect little data, encrypt it, restrict access, follow POPIA breach rules'],
+['Payment fraud or disputes','Medium','Medium','Approved gateway, card checks, clear refund rule'],
+['Child safety concern','Low','High','Approved tutors, parental consent, sessions only inside the platform, report button'],
+['Tutor no-show or drop-out','Medium','Medium','Automatic reminders, quick re-matching with another tutor'],
+['Low take-up or affordability','Medium','High','School partnerships, low price, pilot and referral rewards'],
+['Website downtime','Low','Medium','Backup copy of the site, disaster recovery plan below'],
+['Reliance on one person','Medium','Medium','Code in GitHub, shared admin access, cross-training'],
+['Costs above budget','Low','Medium','Monthly review against the financial model']])}
+<h3>6. Business continuity and disaster recovery</h3>${tb(['Item','Plan'],[
+['Recovery targets (draft)','Data loss of at most 24 hours (RPO) and service back within 4 hours (RTO)'],
+['Backups','Source code in GitHub with full history and a second copy in cloud storage. Daily export of booking data, with automatic cloud backups once the database is in place.'],
+['Fallback','If the site is down, bookings continue by WhatsApp until it returns'],
+['Testing','A restore practice every quarter']])}
+<p><b>Recovery steps:</b></p><ol><li>Detect the problem and tell the Chief Technology Officer.</li><li>Switch to the backup copy of the site.</li><li>Restore the latest data backup.</li><li>Check with a test booking.</li><li>Tell learners and tutors by WhatsApp and a notice on the site.</li><li>Write a short review of what happened and how to prevent it.</li></ol>
+<h3>7. Automation and AI</h3>${tb(['Feature','Status'],[
+['Automatic notifications when a booking is made, approved, declined, reported or rated',ok],
+['Automatic session reminders on the day before and the day of a session',ok],
+['Automatic tutor matching (Match me automatically)',ok],
+['Slot conflict blocking so tutors are never double-booked',ok],
+['Nova Helper chatbot (rule-based assistant) for prices, booking and sessions',ok],
+['Automatic report and statistics generation',ok],
+['AI language model chatbot on AWS',pl]])}
+<h3>8. Cloud tools</h3>${tb(['Tool','Status'],[['GitHub Pages hosting',ok],['AWS S3 and CloudFront hosting',pl],['AWS database (DynamoDB) so users on different phones share bookings',pl]])}
+<p class="note">Items marked Planned depend on the group's AWS access.</p>`}
+
 /* ---------- insights and report ---------- */
-const SAMPLE=[8,9,7,10,6,9,8,7,9,10,5,8,9,7,8];
+const DEMO=[['iPhone',9,9,'yes'],['Android',8,8,'yes'],['Laptop',10,9,'yes'],['Android',7,7,'yes'],['iPhone',8,9,'yes'],['Android',6,6,'no'],['Laptop',9,10,'yes'],['iPhone',9,8,'yes'],['Android',8,7,'yes'],['Android',7,8,'yes'],['Laptop',10,10,'yes'],['iPhone',8,8,'yes'],['Android',5,5,'no'],['iPhone',9,9,'yes'],['Laptop',8,9,'yes'],['Android',9,8,'yes'],['iPhone',7,8,'yes'],['Android',8,7,'yes'],['Laptop',9,9,'yes'],['iPhone',10,9,'yes']];
+const testRows=()=>{const t=(S.td||'').split(/\n/).map(l=>l.split(',').map(x=>x.trim())).filter(r=>r.length>=4&&/^(10|[1-9])$/.test(r[1])&&/^(10|[1-9])$/.test(r[2])&&/^(yes|no)$/i.test(r[3])).map(r=>[r[0]||'Unknown',+r[1],+r[2],r[3].toLowerCase()]);return t.length?{rows:t,src:'real'}:S.inc?{rows:DEMO,src:'demo'}:{rows:[],src:'none'}};
 function calc(){
  const P=S.p,r=P.r/100,M=P.M,H=P.H,sh=P.T/100,F=P.host+P.mkt+P.house,k=P.k;
  const real=B.filter(b=>b.status==='approved'||b.status==='done');
@@ -344,24 +446,33 @@ function calc(){
   ['Tutoring service fee','tsf = h × HOURLY_RATE',R(tsf)],['Revenue','Rev = s × MONTHLY_FEE + tsf',R(rev)],['VAT amount','V = Rev × VAT_RATE',R(vt)],
   ['Tutor payment','TP = (MONTHLY_FEE × m + tsf) × '+nf(sh),R(tp)],['Monthly costs','C = TP + hosting + marketing + housing',R(cost)],['Profit','P = Rev − C',R(prof)],
   ['Break-even hours','smallest whole h with P(h) ≥ 0',be===null?'none':be+' hours']];
- const d=(S.inc?SAMPLE:[]).concat(rt).filter(v=>v>0).sort((a,b)=>a-b),mm=d.length;let sr=[],ST=null;
- if(mm){const mean=d.reduce((a,b)=>a+b,0)/mm,med=mm%2?d[(mm-1)/2]:(d[mm/2-1]+d[mm/2])/2,hi=d.filter(v=>v>=8).length;ST={m:mm,mean,med,rg:d[mm-1]-d[0],mn:d[0],mx:d[mm-1],pc:hi/mm*100};
-  sr=[['Number of ratings','n',mm],['Mean','x̄ = Σx ÷ n',nf(mean)],['Median','middle of the sorted list',nf(med)],['Range','max − min = '+d[mm-1]+' − '+d[0],ST.rg],['Rated 8 or higher','count ≥ 8 ÷ n × 100',nf(ST.pc,1)+'%']]}
+ const TR=testRows(),desc=a=>{const m=a.length;if(!m)return null;const mean=a.reduce((x,y)=>x+y,0)/m,med=m%2?a[(m-1)/2]:(a[m/2-1]+a[m/2])/2;return{m,mean,med,rg:a[m-1]-a[0],mn:a[0],mx:a[m-1],pc:a.filter(v=>v>=8).length/m*100}};
+ const d=TR.rows.map(r=>r[1]).concat(rt).filter(v=>v>0).sort((a,b)=>a-b),e=TR.rows.map(r=>r[2]).sort((a,b)=>a-b);
+ const ST=desc(d),US=desc(e),comp=TR.rows.length?TR.rows.filter(r=>r[3]==='yes').length/TR.rows.length*100:0;
+ const srf=(o,u)=>[['Number of '+u,'n',o.m],['Mean','x̄ = Σx ÷ n',nf(o.mean)],['Median','middle of the sorted list',nf(o.med)],['Range','max − min = '+o.mx+' − '+o.mn,o.rg],['Scored 8 or higher','count ≥ 8 ÷ n × 100',nf(o.pc,1)+'%']];
+ const sr=ST?srf(ST,'ratings'):[],ur=US?srf(US,'scores').concat([['Completed the booking flow','completed ÷ testers × 100',nf(comp,1)+'%']]):[];
+ const g={};TR.rows.forEach(r=>{const k=r[0].toLowerCase();(g[k]=g[k]||{n:r[0],a:[],e:[]}).a.push(r[1]);g[k].e.push(r[2])});
+ const mf=a=>a.reduce((x,y)=>x+y,0)/a.length,dev=Object.values(g).map(o=>[o.n,o.a.length,nf(mf(o.a)),nf(mf(o.e))]),dist=[1,2,3,4,5,6,7,8,9,10].map(v=>d.filter(x=>x===v).length);
  const lab=[],val=[];let tot=0;
  for(let i=1;i<=12;i++){const hi=Math.max(0,Math.round(h+k*(i-1))),p=c0+sl*hi;lab.push('M'+i);val.push(p);tot+=p}
  PARAS=[`Nova Forge's monthly profit P is a linear function of the independent variable h, the number of hours tutored. The parameters are the monthly fee R${M}, the hourly rate R${H}, the VAT rate ${P.r}%, the tutor share ${P.T}% and fixed costs F = ${R(F)} (hosting ${R(P.host)}, marketing ${R(P.mkt)}, housing ${R(P.house)}). With s = ${s} subscribers and m = ${m} students tutored, P(h) = ${nf(sl)}h ${c0<0?'−':'+'} ${nf(Math.abs(c0))}.`,
  `For h = ${h} hours (a discrete value, with a minimum of ${MINH} hours per booking) the tutoring service fee is ${R(tsf)} and revenue is ${R(rev)}. VAT is ${R(vt)}, the tutor payment is ${R(tp)}, monthly costs are ${R(cost)} and profit is ${R(prof)}. `+(be===null?'There is no break-even point.':`The break-even point is h* = ${be} hours.`),
  `With growth of k = ${k} hours per month, total profit over 12 months is ${R(tot)}.`,
- ST?`The ${ST.m} session ratings have a mean of ${nf(ST.mean)}, a median of ${nf(ST.med)} and a range of ${ST.rg} (${ST.mn} to ${ST.mx}). ${nf(ST.pc,1)}% of ratings were 8 or higher.`:'No session ratings have been recorded yet.',
+ ST?`Using ${TR.src==='real'?'testing data collected from '+TR.rows.length+' testers':TR.src==='demo'?'a simulated demonstration dataset of '+TR.rows.length+' testers (not real survey results)':'the ratings given on the site'}, the ${ST.m} session ratings have a mean of ${nf(ST.mean)}, a median of ${nf(ST.med)} and a range of ${ST.rg} (${ST.mn} to ${ST.mx}). ${nf(ST.pc,1)}% of ratings were 8 or higher.`+(US?` Ease of use has a mean of ${nf(US.mean)} out of 10, and ${nf(comp,1)}% of testers completed the booking flow.`:''):'No session ratings have been recorded yet.',
  `Constraints: h is a non-negative whole number, every booking is at least ${MINH} hours, and the VAT rate and tutor share are between 0% and 100%.`];
- return{fr,sr,bl:['Rev','VAT','Tutors','Costs','Profit'],bv:[rev,vt,tp,cost,prof],lab,val,sl,c0}}
+ return{fr,sr,bl:['Rev','VAT','Tutors','Costs','Profit'],bv:[rev,vt,tp,cost,prof],lab,val,sl,c0,ur,dev,dist,src:TR.src,rows:TR.rows}}
 const tbl=(a,h)=>`<div class="scroll"><table><thead><tr><th>${h}</th><th>Expression</th><th>Value</th></tr></thead><tbody>${a.map(x=>`<tr><td>${x[0]}</td><td class="f">${x[1]}</td><td><b>${x[2]}</b></td></tr>`).join('')}</tbody></table></div>`;
 function ins(){const D=calc(),P=S.p;
  const f=(k,l)=>`<label>${l}<input type="number" data-p="${k}" value="${P[k]}" min="0"></label>`;
  return `<h2>Insights</h2><p class="lead">Figures follow the Nova Forge revenue, cost and profit model. Hours, subscribers and students come from the bookings on this site.</p>
 <div class="card"><div class="grid">${f('M','Monthly fee (R)')}${f('H','Hourly rate (R)')}${f('r','VAT rate (%)')}${f('T','Tutor share (%)')}${f('host','Hosting maintenance (R)')}${f('mkt','Digital marketing (R)')}${f('house','Housing maintenance (R)')}${f('k','Growth (hours per month)')}</div>
-<label class="ck" style="margin-top:10px"><input type="checkbox" data-inc="1" ${S.inc?'checked':''}>Include the worked example (120 subscribers, 400 hours, 40 students) and 15 sample ratings</label></div>`+
- (D?`<h3 style="margin-top:16px">Finance</h3>${tbl(D.fr,'Quantity')}<h3>Rating statistics</h3>${D.sr.length?tbl(D.sr,'Statistic'):'<p>No ratings yet.</p>'}
+<label class="ck" style="margin-top:10px"><input type="checkbox" data-inc="1" ${S.inc?'checked':''}>Include the worked example (120 subscribers, 400 hours, 40 students) and the demo testing data (20 simulated testers)</label>
+<label style="margin-top:10px">Paste real testing data (optional)<textarea data-td="1" rows="4" placeholder="iPhone,9,8,yes">${esc(S.td||'')}</textarea></label><p class="note">One tester per line: device, session rating (1 to 10), ease of use (1 to 10), completed the booking (yes or no). When filled in, this replaces the demo data.</p></div>`+
+ (D?`<h3 style="margin-top:16px">Finance</h3>${tbl(D.fr,'Quantity')}<h3>Rating statistics</h3><p class="note"><span class="tag">${D.src==='real'?'Real testing data':D.src==='demo'?'Demo data (simulated)':'Site ratings only'}</span> ${D.src==='demo'?'These testers are simulated for demonstration, not real survey results. Paste real results above to replace them.':''}</p>${D.sr.length?tbl(D.sr,'Statistic'):'<p>No ratings yet.</p>'}
+<h3>Usability statistics</h3>${D.ur.length?tbl(D.ur,'Statistic'):'<p>No usability data yet.</p>'}
+<h3>Results by device</h3>${D.dev.length?tb(['Device','Testers','Mean rating','Mean ease of use'],D.dev):'<p>No device data yet.</p>'}
+<div class="card" style="margin-top:12px"><h3>Distribution of session ratings</h3>${chart(['1','2','3','4','5','6','7','8','9','10'],D.dist,v=>String(Math.round(v)),'Rating given','Number of testers')}</div>
+<details class="card" style="margin-top:12px"><summary>Show the testing data</summary>${tb(['Tester','Device','Rating','Ease of use','Completed'],D.rows.map((r,i)=>['T'+String(i+1).padStart(2,'0'),esc(r[0]),r[1],r[2],r[3]]))}</details>
 <div class="card"><h3>Monthly financial summary</h3>${chart(D.bl,D.bv,kf,'Item','Amount (R)')}<p class="note">Rev = revenue, VAT = VAT amount, Tutors = tutor payment, Costs = monthly costs.</p></div>
 <div class="card" style="margin-top:12px"><h3>Profit growth over 12 months</h3>${chart(D.lab,D.val,kf,'Month','Profit (R)')}<p class="note">P(h<sub>i</sub>) = ${nf(D.sl)} · h<sub>i</sub> ${D.c0<0?'−':'+'} ${nf(Math.abs(D.c0))}, where h<sub>i</sub> = h + k(i − 1).</p></div>`:'<p>No bookings yet. Include the worked example or complete a booking.</p>')}
 function report(){calc();return `<h2>Project report summary</h2><p class="lead">Written automatically from the Insights figures.</p><div class="card">${PARAS.map(t=>`<p>${t}</p>`).join('')||'<p>No data to report on yet.</p>'}</div>
@@ -370,9 +481,9 @@ function report(){calc();return `<h2>Project report summary</h2><p class="lead">
 <p class="note">Group: Ramalebane J.P, Noko P.A.S, Kunene S.L.A, Vuma M, Mguni M.E, Nemamilwe A, Shozi S, Bapela M, Chauke R.N, Nyawo S</p>`}
 
 /* ---------- render ---------- */
-function render(){const m=me();if((S.v==='ins'||S.v==='report')&&!(m&&m.role==='tutor'))S.v=m?'dash':'home';
- $('nav').innerHTML=`<b>Nova Forge</b>`+[['home','Home'],['dash','Dashboard']].concat(m&&m.role==='tutor'?[['ins','Insights'],['report','Report']]:[]).map(a=>`<button class="tab" aria-selected="${S.v===a[0]}" data-act="go" data-v="${a[0]}">${a[1]}</button>`).join('')+(m?`<span class="who">${esc(m.name)} (${m.role})</span><button class="tab" data-act="logout">Log out</button>`:'');
- $('app').innerHTML=({home,auth,dash,live,ins,report}[S.v]||home)();
+function render(){const m=me();if((S.v==='ins'||S.v==='report'||S.v==='plan')&&!(m&&m.role==='tutor'))S.v=m?'dash':'home';
+ $('nav').innerHTML=`<b>Nova Forge</b>`+[['home','Home'],['about','About'],['dash','Dashboard']].concat(m&&m.role==='tutor'?[['ins','Insights'],['report','Report'],['plan','Company plan']]:[]).map(a=>`<button class="tab" aria-selected="${S.v===a[0]}" data-act="go" data-v="${a[0]}">${a[1]}</button>`).join('')+(m?`<span class="who">${esc(m.name)} (${m.role})</span><button class="tab" data-act="logout">Log out</button>`:'');
+ $('app').innerHTML=({home,about,auth,dash,live,ins,report,plan}[S.v]||home)();
  if(S.v==='live')wb()}
 function wb(){const c=$('wb'),x=c.getContext('2d');let d=false;x.lineWidth=3;x.lineCap='round';x.strokeStyle='#14213D';
  const p=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height]};
@@ -404,21 +515,26 @@ const act={
   else if(!/^\d{3}$/.test(cv))bad='The CVV must be 3 digits.';
   if(bad)return S.msg=['err',bad+' Check the details and try again.'],render();
   const t=usr(S.bk.tid),hr=S.bk.hrs||MINH,q=quote(hr);
-  B.push({id:Date.now(),sid:ME,tid:t.id,d:S.bk.d,h:S.bk.h,hrs:hr,p:q.p,sub:q.due,pm:q.ym,status:'pending'});save();
+  B.push({id:Date.now(),sid:ME,tid:t.id,d:S.bk.d,h:S.bk.h,hrs:hr,p:q.p,sub:q.due,pm:q.ym,status:'pending'});notify(ME,'Booking confirmed with '+t.name+' on '+fd(S.bk.d)+' at '+S.bk.h+'. Waiting for tutor approval.');notify(t.id,'New request from '+me().name+' for '+fd(S.bk.d)+' at '+S.bk.h+' ('+hr+' hours).');save();
   S.bk=null;S.t='mine';S.msg=['ok','Payment accepted. Your booking is confirmed and matched to '+esc(t.name)+'. Waiting for approval.'];render()},
- appr(d){const b=B.find(x=>String(x.id)===d.id);b.status=d.y==='1'?'approved':'declined';save();S.msg=['ok',d.y==='1'?'Request approved. The student has been notified.':'Request declined. Next request shown.'];render()},
+ appr(d){const b=B.find(x=>String(x.id)===d.id);b.status=d.y==='1'?'approved':'declined';notify(b.sid,d.y==='1'?'Your request was approved. Join the live session at the booked time.':'Your request was declined and your payment is refunded.');save();S.msg=['ok',d.y==='1'?'Request approved. The student has been notified.':'Request declined. Next request shown.'];render()},
  join(d){S.bid=+d.id;S.v='live';render()},
  cam(){const v=$('vid');(navigator.mediaDevices?navigator.mediaDevices.getUserMedia({video:true}):Promise.reject()).then(s=>{stream=s;v.srcObject=s;v.play()}).catch(()=>$('cm').textContent='Camera is not available or permission was denied.')},
  wclear(){const c=$('wb');c.getContext('2d').clearRect(0,0,c.width,c.height)},
  leave(){stop();const b=B.find(x=>x.id===S.bid),m=me();S.v='dash';if(m.role==='student'){b.att=true;S.t='mine'}else{S.t='sess';S.rep=b.id}save();render()},
- rate(d){const b=B.find(x=>String(x.id)===d.id);b.rating=+$('rt'+d.id).value;b.fb=$('fb'+d.id).value.trim();save();render()},
+ rate(d){const b=B.find(x=>String(x.id)===d.id);b.rating=+$('rt'+d.id).value;notify(b.tid,'A student rated your session '+b.rating+' out of 10.');b.fb=$('fb'+d.id).value.trim();save();render()},
  repo(d){S.rep=+d.id;render()},
  reps(d){const b=B.find(x=>String(x.id)===d.id),t=$('rtp').value.trim(),n=$('rnt').value.trim(),s=+$('rsc').value;
   if(!t||!n||s<0||s>10)return S.msg=['err','Add the topic, feedback and a score from 0 to 10.'],render();
-  b.report={topic:t,notes:n,score:s};b.status='done';S.rep=null;save();S.msg=['ok','Report sent to the student dashboard.'];render()},
+  b.report={topic:t,notes:n,score:s};b.status='done';notify(b.sid,'Your progress report is ready on your dashboard.');S.rep=null;save();S.msg=['ok','Report sent to the student dashboard.'];render()},
  psave(){const m=me(),d=[...document.querySelectorAll('.pd:checked')].map(x=>+x.value),t=[...document.querySelectorAll('.pt:checked')].map(x=>x.value);
   if(!d.length||!t.length)return S.msg=['err','Choose at least one day and at least one start time.'],render();
   m.subject=$('ps').value;m.av={d,t};save();S.msg=['ok','Profile saved. Students can now book your free slots.'];render()},
+ auto(){if(!S.f)return S.msg=['err','Choose a subject first, then tap Match me automatically.'],render();
+  const c=U.filter(u=>u.role==='tutor'&&u.subject===S.f).map(t=>({t,s:slots(t,MINH)[0]})).filter(x=>x.s).sort((a,b)=>(a.s[0]+a.s[1]).localeCompare(b.s[0]+b.s[1])||avg(b.t)-avg(a.t));
+  if(!c.length)return S.msg=['err','No tutor has a free slot for that subject right now.'],render();
+  S.bk={tid:c[0].t.id,step:1,hrs:MINH};S.msg=['ok','Matched you with '+esc(c[0].t.name)+', the tutor with the earliest free slot.'];render()},
+ readall(){N.forEach(n=>{if(n.to===ME)n.read=true});save();render()},
  print(){window.print()},
  copy(){const b=$('cp');(navigator.clipboard?navigator.clipboard.writeText(PARAS.join('\n\n')):Promise.reject()).then(()=>b.textContent='Copied').catch(()=>b.textContent='Copy failed');setTimeout(()=>b.textContent='Copy text',1800)}
 };
@@ -427,7 +543,8 @@ document.addEventListener('change',e=>{const t=e.target;
  if(t.dataset.chg){S[t.dataset.chg]=t.value;render()}
  if(t.dataset.p){S.p[t.dataset.p]=parseFloat(t.value)||0;render()}
  if(t.dataset.inc){S.inc=t.checked;render()}
- if(t.dataset.hrs){S.bk.hrs=+t.value;render()}});
+ if(t.dataset.hrs){S.bk.hrs=+t.value;render()}
+ if(t.dataset.td){S.td=t.value;try{localStorage.setItem('nf_td',S.td)}catch(e){}render()}});
 const sync=()=>{load();const a=document.activeElement;if(!a||!/INPUT|TEXTAREA|SELECT/.test(a.tagName))render()};
 window.addEventListener('storage',e=>{if(e.key===K)sync()});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
@@ -442,6 +559,42 @@ render();
  apply(st||(mq.matches?'dark':'light'));
  b.addEventListener('click',()=>{st=r.dataset.theme==='dark'?'light':'dark';apply(st);try{localStorage.setItem('nf_theme',st)}catch(e){}});
  if(mq.addEventListener)mq.addEventListener('change',e=>{if(!st)apply(e.matches?'dark':'light')});
+})();
+</script>
+<button id="chatBtn" type="button" aria-label="Open Nova Helper" aria-expanded="false">💬</button>
+<div id="chatBox" role="dialog" aria-label="Nova Helper chat" hidden>
+<div class="chead"><b>Nova Helper</b><button id="chatX" type="button" aria-label="Close chat">✕</button></div>
+<div id="chatLog" aria-live="polite"></div>
+<div class="chips" id="chatChips"></div>
+<div class="cin"><input id="chatIn" placeholder="Ask about prices, booking..." aria-label="Your question" maxlength="200"><button id="chatGo" type="button">Send</button></div>
+</div>
+<script>
+(function(){
+ const $=id=>document.getElementById(id),log=$('chatLog'),box=$('chatBox'),btn=$('chatBtn');
+ const P=()=>typeof S!=='undefined'?S.p:{M:150,H:30,T:35,r:15};
+ const R=n=>'R'+n.toLocaleString('en-ZA',{minimumFractionDigits:2,maximumFractionDigits:2});
+ const KB=[
+ [/\b(hi|hello|hey|howzit|sawubona)\b/,()=>'Hello! I am the Nova Helper. Ask me about prices, booking, minimum hours, sessions or becoming a tutor.'],
+ [/price|cost|how much|fee|afford|cheap/,()=>'Nova Forge costs '+R(P().M)+' per month (charged once a month) plus '+R(P().H)+' per tutoring hour. '+P().r+'% VAT is added. Your first 2-hour session in a month is '+R(P().M+2*P().H)+' plus VAT, and later 2-hour sessions that month are '+R(2*P().H)+' plus VAT.'],
+ [/minimum|at least|how many hours|hours/,()=>'Every booking is at least 2 hours. You can book 2 to 6 hours at a time.'],
+ [/card|4242|test|pay/,()=>'This is a demo payment. Use the test card 4242 4242 4242 4242 with any future expiry (like 12/28) and any 3 digits. Card details are never stored.'],
+ [/approve|waiting|pending|decline|refund/,()=>'After you pay, the tutor reviews your request. You get a notification when it is approved or declined. If it is declined, your payment is refunded.'],
+ [/join|session|video|camera|whiteboard|live/,()=>'Once approved, open My sessions and tap Join live session. You get a camera preview and a shared whiteboard. Tap Leave session when you finish.'],
+ [/report|progress|rate|feedback|rating/,()=>'After a session you can rate it from 1 to 10 and leave feedback. Your tutor then sends a progress report to your dashboard.'],
+ [/book|schedule|slot|match/,()=>'To book: log in as a student, open Browse and book, choose a tutor or tap Match me automatically, pick the hours and a start time, then pay. The tutor then approves your request.'],
+ [/tutor|teach|become/,()=>'Tutors choose Tutor journey, create an account, set their subject and availability, then approve requests. Tutors receive '+P().T+'% of the fees from their students.'],
+ [/subject|grade|math|accounting|econ|business|science/,()=>'We offer Mathematics, Accounting, Economics, Business Studies, Physical Sciences and Life Sciences for Grades 10 to 12.'],
+ [/who|about|mission|nova forge|why/,()=>'Nova Forge is a tutoring company giving learners from underprivileged backgrounds in Limpopo equal access to quality education at an accessible price.'],
+ [/safe|secur|privacy|popia|data|password/,()=>'Passwords are scrambled, card details are never stored, and we plan to require parental consent for learners under 18. Tutors can read our security and recovery plan under Company plan.'],
+ [/remind|notif/,()=>'You get automatic notifications when a booking is made, approved, declined, reported or rated, and reminders the day before and the day of your session. Open the Notifications tab.']
+ ];
+ const add=(t,u)=>{const d=document.createElement('div');d.className='mb'+(u?' u':'');d.textContent=t;log.appendChild(d);log.scrollTop=log.scrollHeight};
+ const ask=q=>{q=q.trim();if(!q)return;add(q,true);const l=q.toLowerCase();let a='I am not sure about that yet. Try asking about prices, booking, minimum hours, sessions, reports or becoming a tutor.';for(const k of KB){if(k[0].test(l)){a=k[1]();break}}setTimeout(()=>add(a),250)};
+ ['Prices','How do I book?','Minimum hours','Become a tutor'].forEach(t=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.onclick=()=>ask(t);$('chatChips').appendChild(b)});
+ const open=o=>{box.hidden=!o;btn.setAttribute('aria-expanded',String(o));if(o){if(!log.children.length)add('Hi, I am the Nova Helper. What would you like to know?');$('chatIn').focus()}};
+ btn.addEventListener('click',()=>open(box.hidden));$('chatX').addEventListener('click',()=>open(false));
+ $('chatGo').addEventListener('click',()=>{ask($('chatIn').value);$('chatIn').value=''});
+ $('chatIn').addEventListener('keydown',e=>{if(e.key==='Enter'){ask(e.target.value);e.target.value=''}});
 })();
 </script>
 </body>
