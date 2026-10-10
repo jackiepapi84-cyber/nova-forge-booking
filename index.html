@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nova Forge | Online tutoring</title>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#F2F5FA;--ink:#14213D;--mut:#4A5873;--line:#D5DDEA;--a:#0B6E8A;--b:#E09F3E;--neg:#B5423A;--stu:#2E7D5B;--tut:#6B3FA0}
 *{box-sizing:border-box}
@@ -43,6 +43,81 @@ svg{width:100%;height:auto;display:block}
 canvas{width:100%;height:auto;aspect-ratio:2/1;background:#fff;border:1px solid var(--line);border-radius:8px;touch-action:none;cursor:crosshair}
 video{width:100%;aspect-ratio:16/9;background:#14213D;border-radius:8px}
 @media print{header,.noprint{display:none}body{background:#fff}}
+/* UI polish (styles only) */
+body{background:linear-gradient(#E6EEF8,#F5F8FC 360px) no-repeat,#F5F8FC}
+header{box-shadow:0 2px 10px rgba(20,33,61,.25)}
+.tab{transition:background .15s,color .15s}
+.tab:hover{background:rgba(255,255,255,.14);color:#fff}
+.tab[aria-selected=true]:hover{background:#fff;color:var(--ink)}
+.sub .tab{padding:9px 16px}.sub .tab:hover{background:#EEF3FA;color:var(--ink)}.sub .tab[aria-selected=true]:hover{background:var(--ink);color:#fff}
+.hero{background:linear-gradient(135deg,#14213D 0%,#0B6E8A 100%);color:#fff;border-radius:14px;padding:34px 26px;margin-bottom:18px}
+.hero h1{color:#fff;margin-bottom:.35em}.hero .lead{color:#D6E2F3;max-width:46ch;margin:0}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:6px}
+.steps div{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;gap:12px;align-items:center}
+.steps b{flex:none;width:34px;height:34px;border-radius:50%;background:var(--b);color:var(--ink);display:grid;place-items:center;font-family:Sora,sans-serif}
+.steps p{margin:0;font-weight:600;font-size:.95rem;line-height:1.3}
+h2{font-size:1.65rem;margin-bottom:.4em}
+.card{border-radius:12px;box-shadow:0 1px 3px rgba(20,33,61,.07);transition:box-shadow .15s,transform .15s}
+.list .card:hover,.two .card:hover{box-shadow:0 8px 22px rgba(20,33,61,.12);transform:translateY(-2px)}
+.card.s{border-top-width:5px}.card.t{border-top-width:5px}
+.btn{border-radius:10px;min-height:44px;padding:10px 20px;transition:filter .15s,transform .1s}
+.btn:hover{filter:brightness(.94)}.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed;filter:none}
+.btn.alt:hover{background:#EEF3FA;filter:none}
+input,select,textarea{min-height:44px;border-radius:10px;border:1px solid #BFCADB}
+input:focus,select:focus,textarea:focus{border-color:var(--a)}
+.tag{background:#DDF0F5;color:#0A5A71;border-radius:999px;padding:3px 12px}
+.msg{padding:10px 14px;border-radius:10px;background:#fff;border:1px solid var(--line);border-left-width:5px}
+.msg.err{border-left-color:var(--neg)}.msg.ok{border-left-color:var(--a)}
+table{border-radius:10px;overflow:hidden}
+thead th{background:#EAF0F8}
+tbody tr:nth-child(even) td{background:#F8FAFD}
+tbody tr:hover td{background:#EFF5FB}
+video,canvas{box-shadow:0 1px 3px rgba(20,33,61,.12)}
+footer,.note{line-height:1.45}
+@media(max-width:600px){.wrap{padding:16px 14px 36px}.hero{padding:26px 18px}.card .btn{width:100%;margin-right:0}h2{font-size:1.4rem}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+/* Apple-style layer (styles only) */
+:root{--bg:#F5F5F7;--ink:#1D1D1F;--mut:#6E6E73;--line:#D2D2D7;--a:#0071E3;--b:#0071E3;--neg:#D70015;--stu:#30A46C;--tut:#8944AB}
+body,input,select,textarea,.btn,.tab,h1,h2,h3,th,.bar b,.steps b{font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif}
+body{background:var(--bg);color:var(--ink);font-size:17px;line-height:1.47;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-weight:700;letter-spacing:-.02em}
+h2{font-size:clamp(1.6rem,5vw,2.1rem);letter-spacing:-.03em}
+.lead{font-size:1.06rem;color:var(--mut)}
+header{background:rgba(255,255,255,.72);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(0,0,0,.08);box-shadow:none;color:var(--ink)}
+.bar b{color:var(--ink);font-weight:700;letter-spacing:-.02em}
+.who{color:var(--mut)}
+.tab{color:var(--mut);border-radius:980px;font-weight:500}
+.tab:hover{background:rgba(0,0,0,.05);color:var(--ink)}
+.tab[aria-selected=true],.tab[aria-selected=true]:hover{background:rgba(0,113,227,.12);color:var(--a)}
+.sub .tab{background:#fff;border:1px solid var(--line);color:var(--ink)}
+.sub .tab:hover{background:#fff;border-color:var(--a)}
+.sub .tab[aria-selected=true],.sub .tab[aria-selected=true]:hover{background:var(--a);border-color:var(--a);color:#fff}
+.hero{background:linear-gradient(180deg,#fff,#EEF5FF);color:var(--ink);border:1px solid rgba(0,0,0,.06);border-radius:28px;padding:56px 28px;text-align:center}
+.hero h1{color:var(--ink);font-size:clamp(2rem,7.5vw,3.5rem);letter-spacing:-.04em;line-height:1.08;max-width:15ch;margin:0 auto .4em}
+.hero .lead{color:var(--mut);max-width:42ch;margin:0 auto}
+.steps div{border:0;border-radius:18px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.steps b{background:var(--a);color:#fff}
+.card{border:1px solid rgba(0,0,0,.06);border-radius:20px;box-shadow:0 2px 14px rgba(0,0,0,.05)}
+.card.s,.card.t{border-top-width:1px}
+.card.s{box-shadow:inset 0 3px 0 var(--stu),0 2px 14px rgba(0,0,0,.05)}
+.card.t{box-shadow:inset 0 3px 0 var(--tut),0 2px 14px rgba(0,0,0,.05)}
+.list .card:hover,.two .card:hover{transform:translateY(-3px)}
+.btn{background:var(--a);color:#fff;border-radius:980px;font-weight:600;padding:11px 22px}
+.btn:hover{filter:brightness(1.08)}
+.btn.alt{background:rgba(0,113,227,.1);color:var(--a);border:0}
+.btn.alt:hover{background:rgba(0,113,227,.18);filter:none}
+input,select,textarea{border:1px solid var(--line);border-radius:12px;background:#fff}
+input:focus,select:focus,textarea:focus{border-color:var(--a)}
+label{font-weight:500}
+.tag{background:rgba(0,113,227,.1);color:var(--a);font-weight:600}
+.msg{border-radius:14px}
+table{border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+thead th{background:#F5F5F7;color:var(--mut);font-weight:600}
+tbody tr:nth-child(even) td{background:#fff}
+tbody tr:hover td{background:#F5F9FF}
+video,canvas{border-radius:16px;border:0}
+@media(max-width:600px){.hero{padding:38px 18px;border-radius:22px}}
 </style>
 </head>
 <body>
@@ -81,7 +156,7 @@ function chart(labels,vals,fmt,xt,yt){
  return s+`<line x1="${L}" x2="${W-Rr}" y1="${y(0)}" y2="${y(0)}" stroke="#14213D"/><text x="${L+w/2}" y="${H-6}" text-anchor="middle" font-size="12" fill="#14213D">${xt}</text><text transform="rotate(-90 12 ${T+h/2})" x="12" y="${T+h/2}" text-anchor="middle" font-size="12" fill="#14213D">${yt}</text></svg>`}
 
 /* ---------- views ---------- */
-function home(){const m=me();return `<h1>Learn with a tutor. Know what it costs.</h1><p class="lead">Online tutoring with live video, a shared whiteboard and a progress report after every session.</p>
+function home(){const m=me();return `<div class="hero"><h1>Learn with a tutor. Know what it costs.</h1><p class="lead">Online tutoring with live video, a shared whiteboard and a progress report after every session.</p></div><div class="steps"><div><b>1</b><p>Register and log in</p></div><div><b>2</b><p>Book a tutor and pay</p></div><div><b>3</b><p>Tutor approves the request</p></div><div><b>4</b><p>Live session, feedback and report</p></div></div>
 ${m?`<div class="card"><p>You are logged in as <b>${esc(m.name)}</b>.</p><button class="btn" data-act="go" data-v="dash">Open my dashboard</button></div>`:
 `<div class="two"><div class="card s"><h3>I am a student</h3><p>Browse tutors, book and pay for a session.</p><button class="btn" data-act="role" data-r="student">Student journey</button></div>
 <div class="card t"><h3>I am a tutor</h3><p>Set your availability and approve student requests.</p><button class="btn" data-act="role" data-r="tutor">Tutor journey</button></div></div>`}`}
