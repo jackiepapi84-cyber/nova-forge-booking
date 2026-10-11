@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; media-src 'self' blob:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#FFFFFF">
 <script>try{var t=localStorage.getItem('nf_theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t}catch(e){}</script>
 <title>Nova Forge | Online tutoring</title>
@@ -252,6 +253,13 @@ const R=n=>'R '+nf(n);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const kf=v=>Math.abs(v)>=1000?(v/1000).toFixed(1)+'k':String(Math.round(v));
 const hs=s=>{let x=5381;for(const c of s)x=(x*33^c.charCodeAt(0))>>>0;return String(x)};
+const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+const canHash=()=>!!(window.crypto&&crypto.subtle);
+const newSalt=()=>hex(crypto.getRandomValues(new Uint8Array(16)));
+async function hashPw(pw,salt){const en=new TextEncoder(),k=await crypto.subtle.importKey('raw',en.encode(pw),'PBKDF2',false,['deriveBits']);return hex(await crypto.subtle.deriveBits({name:'PBKDF2',salt:en.encode(salt),iterations:100000,hash:'SHA-256'},k,256))}
+const lockGet=()=>{try{return JSON.parse(localStorage.getItem('nf_lock'))||{}}catch(e){return{}}},lockSet=o=>{try{localStorage.setItem('nf_lock',JSON.stringify(o))}catch(e){}};
+const audit=(ev,who)=>{try{const a=JSON.parse(localStorage.getItem('nf_audit'))||[];a.unshift({t:new Date().toLocaleString('en-ZA'),ev,who:who||''});localStorage.setItem('nf_audit',JSON.stringify(a.slice(0,60)))}catch(e){}};
+const auditRows=()=>{try{return(JSON.parse(localStorage.getItem('nf_audit'))||[]).slice(0,15).map(a=>[a.t,esc(a.ev),esc(a.who)])}catch(e){return[]}};
 const SUBJ=["Mathematics","Accounting","Economics","Business Studies","Physical Sciences","Life Sciences"],AB=["Math","Acc","Eco","BS","PS","LS"];
 const DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],TM=["14:00","16:00","18:00"],K='nova_forge_v2';
 let U=[],B=[],N=[],ME=null,PARAS=[],stream=null;
@@ -296,13 +304,13 @@ function auth(){const t=S.role==='tutor';
 <div class="sub"><button class="tab" aria-selected="${S.reg}" data-act="reg" data-y="1">Yes, log in</button><button class="tab" aria-selected="${!S.reg}" data-act="reg" data-y="0">No, create an account</button></div>${msg()}
 <div class="card ${t?'t':'s'}">${S.reg?`<div class="grid"><label>Email<input id="le" type="email" value="${esc(S.pre||'')}"></label><label>Password<input id="lp" type="password"></label></div><button class="btn" data-act="login">Log in</button>
 ${t?'<p class="note">Demo tutor: thabo@novaforge.demo, password nova123</p>':''}`:
-`<div class="grid"><label>Full name<input id="cn" maxlength="40"></label><label>Email<input id="ce" type="email"></label><label>Password (6+ characters)<input id="cp" type="password"></label>
+`<div class="grid"><label>Full name<input id="cn" maxlength="40"></label><label>Email<input id="ce" type="email"></label><label>Password (8+ characters, with a letter and a number)<input id="cp" type="password" autocomplete="new-password"></label>
 ${t?`<label>Subject<select id="cs">${SUBJ.map(s=>`<option>${s}</option>`).join('')}</select></label>`:
-`<label>Grade<select id="cg"><option>10</option><option>11</option><option>12</option></select></label>`}</div><button class="btn" data-act="create">Create account</button><p class="note">Demo only: passwords are scrambled in this browser, never sent anywhere.</p>`}</div>`}
+`<label>Grade<select id="cg"><option>10</option><option>11</option><option>12</option></select></label>`}</div><p><label class="ck"><input type="checkbox" id="cons">${t?'I am 18 or older and I agree to the Privacy Policy.':'I am 18 or older, or my parent or guardian agrees to me using Nova Forge and to the Privacy Policy.'}</label> <button class="btn alt" data-act="go" data-v="privacy">Read the Privacy Policy</button></p><button class="btn" data-act="create">Create account</button><p class="note">Passwords are salted and hashed in this browser and never sent anywhere.</p>`}</div>`}
 
 function dash(){const m=me();if(!m){S.v='home';return home()}
- remind(m);const st=m.role==='student',nt=['notes','Notifications'+(unread(m.id)?' ('+unread(m.id)+')':'')],T=st?[['browse','Browse and book'],['mine','My sessions'],nt]:[['req','Requests'],['sess','Sessions'],['prof','Profile and availability'],nt];
- return `<h2>${st?'Student':'Tutor'} dashboard</h2><div class="sub">${T.map(a=>`<button class="tab" aria-selected="${S.t===a[0]}" data-act="tab" data-t="${a[0]}">${a[1]}</button>`).join('')}</div>${msg()}`+({browse,mine,req,sess,prof,notes}[S.t]||browse)(m)}
+ remind(m);const st=m.role==='student',nt=['notes','Notifications'+(unread(m.id)?' ('+unread(m.id)+')':'')],T=st?[['browse','Browse and book'],['mine','My sessions'],nt,['priv','Privacy']]:[['req','Requests'],['sess','Sessions'],['prof','Profile and availability'],nt,['priv','Privacy']];
+ return `<h2>${st?'Student':'Tutor'} dashboard</h2><div class="sub">${T.map(a=>`<button class="tab" aria-selected="${S.t===a[0]}" data-act="tab" data-t="${a[0]}">${a[1]}</button>`).join('')}</div>${msg()}`+({browse,mine,req,sess,prof,notes,priv}[S.t]||browse)(m)}
 
 function browse(){
  const sub=S.f||'',k=S.k||'rating',dir=S.o==='desc'?-1:1;
@@ -356,6 +364,16 @@ function live(){const b=B.find(x=>x.id===S.bid),m=me();if(!b||!m)return home();c
 <button class="btn" data-act="leave">Leave session</button>`}
 
 const tb=(h,rows)=>`<div class="scroll"><table><thead><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+function priv(m){const c=m.consent;return `<div class="card ${m.role==='student'?'s':'t'}"><h3>Your privacy</h3><p>${c?'Consent recorded on '+new Date(c.ts).toLocaleDateString('en-ZA')+'.':'No consent record. This account was created before consent was added.'}</p><p>You can download your data, or delete your account and everything linked to it.</p><button class="btn alt" data-act="dl">Download my data</button><button class="btn alt" data-act="del">Delete my account</button><button class="btn alt" data-act="go" data-v="privacy">Read the Privacy Policy</button></div>`}
+function privacy(){return `<h2>Privacy Policy</h2><p class="lead">Draft policy for the Nova Forge prototype, written with the Protection of Personal Information Act (POPIA) in mind.</p>
+<div class="card"><h3>What we collect</h3><p>Your name, email, grade (students) or subject (tutors), your bookings, ratings and notifications. We never store card numbers.</p>
+<h3>Why</h3><p>To run bookings and sessions, send notifications and produce progress reports. We do not sell your information or use it for advertising.</p>
+<h3>Who can see it</h3><p>A tutor sees a student's name and grade only for requests made to that tutor. Students see a tutor's name, subject and rating. Company pages are limited to tutors.</p>
+<h3>Learners under 18</h3><p>A parent or guardian must agree before a learner under 18 uses Nova Forge. This is confirmed with a tick-box when the account is created.</p>
+<h3>Your rights</h3><p>You can download your data, or delete your account and its bookings, at any time from the Privacy tab on your dashboard.</p>
+<h3>How we protect it</h3><p>Salted password hashing, an account lock after failed logins, automatic logout, role checks on every action and a security log. The Company plan lists these and the controls still planned.</p>
+<h3>Where it is stored</h3><p>In this prototype, in your own browser. A cloud database is planned.</p>
+<h3>Questions</h3><p>Contact the Security and Compliance Officer through the Nova Forge team.</p></div>`}
 function notes(m){const a=N.filter(n=>n.to===m.id);return `<div class="noprint"><button class="btn alt" data-act="readall">Mark all as read</button></div><div class="list">${a.map(n=>`<div class="card ${m.role==='student'?'s':'t'}"><p>${n.read?'':'<span class="tag">New</span> '}${esc(n.text)}</p><p class="note">${n.ts}</p></div>`).join('')||'<p>No notifications yet. They appear here automatically when bookings change.</p>'}</div>`}
 
 function about(){const P=S.p,first=P.M+2*P.H,v=first*P.r/100,later=2*P.H;
@@ -392,17 +410,24 @@ function plan(){
 ['Promotion','WhatsApp class groups, Facebook community pages, posters at schools, libraries and community halls, teacher recommendations and a referral reward.']])}
 <h3>Monthly marketing budget (R1,100)</h3>${tb(['Item','Amount'],[['Facebook and Instagram community adverts','R500'],['WhatsApp data and printed flyers','R300'],['Referral rewards','R200'],['<b>Total</b>','<b>R1,100</b>']])}
 <h3>Six-month rollout (draft)</h3>${tb(['Month','Action','Measure'],[['1','Pilot with one or two schools','10 learners'],['2','Collect ratings and fix problems','Average rating of 8 or more'],['3','Start WhatsApp and Facebook adverts','30 subscribers'],['4','Teacher partnerships and referrals','60 subscribers'],['5','Add more tutors and subjects','90 subscribers'],['6','Review the numbers against the financial model','120 subscribers, 400 hours']])}
-<h3>4. Security</h3>${tb(['Control','Status'],[
-['Passwords are scrambled before saving (production would use a server-side method such as bcrypt)',ok],
+<h3>4. Security</h3><p class="note">These controls run in the browser, so they protect the prototype. Real protection needs a server, which is why that is listed as Planned.</p>${tb(['Control','Status'],[
+['Passwords stored as salted PBKDF2-SHA256 hashes (100,000 rounds). Older accounts upgrade at their next login',ok],
+['Password rule: 8 or more characters with a letter and a number',ok],
+['Account locked for 5 minutes after 5 failed logins',ok],
+['Automatic logout after 15 minutes of inactivity',ok],
 ['Card details are checked in the browser and never stored',ok],
-['Students cannot open company pages and see only their own bookings (enforced in the interface now, on a server later)',ok],
+['Role checks on every action: only the right student or tutor can approve, join, report or rate a session',ok],
 ['Text typed by users is escaped to stop script injection',ok],
+['Content Security Policy blocks outside scripts and network calls',ok],
 ['Secure HTTPS hosting',ok],
+['Consent at sign-up (adult, or parent or guardian) and a Privacy Policy (POPIA)',ok],
+['Users can download their data or delete their account',ok],
+['Security log of sign-ins and key actions (see below)',ok],
 ['Payments through a PCI DSS compliant gateway',pl],
-['Multi-factor login for tutors',pl],
+['Multi-factor login for tutors and email verification',pl],
 ['Tutor vetting: ID, qualifications and references',pl],
-['Parental consent for learners under 18 and a privacy policy (POPIA)',pl],
-['Encrypted cloud database with access control',pl]])}
+['Server-side login and an encrypted cloud database',pl]])}
+<h3>Security log (latest 15 events)</h3>${auditRows().length?tb(['Time','Event','Account'],auditRows()):'<p>No events recorded yet. Sign-ins and key actions appear here.</p>'}
 <h3>5. Risk management</h3>${tb(['Risk','Likelihood','Impact','Response'],[
 ['Load-shedding or internet outage','High','Medium','Free rescheduling, low-data design, tutors may use mobile data'],
 ['Leak of learner information','Low','High','Collect little data, encrypt it, restrict access, follow POPIA breach rules'],
@@ -482,8 +507,8 @@ function report(){calc();return `<h2>Project report summary</h2><p class="lead">
 
 /* ---------- render ---------- */
 function render(){const m=me();if((S.v==='ins'||S.v==='report'||S.v==='plan')&&!(m&&m.role==='tutor'))S.v=m?'dash':'home';
- $('nav').innerHTML=`<b>Nova Forge</b>`+[['home','Home'],['about','About'],['dash','Dashboard']].concat(m&&m.role==='tutor'?[['ins','Insights'],['report','Report'],['plan','Company plan']]:[]).map(a=>`<button class="tab" aria-selected="${S.v===a[0]}" data-act="go" data-v="${a[0]}">${a[1]}</button>`).join('')+(m?`<span class="who">${esc(m.name)} (${m.role})</span><button class="tab" data-act="logout">Log out</button>`:'');
- $('app').innerHTML=({home,about,auth,dash,live,ins,report,plan}[S.v]||home)();
+ $('nav').innerHTML=`<b>Nova Forge</b>`+[['home','Home'],['about','About'],['privacy','Privacy'],['dash','Dashboard']].concat(m&&m.role==='tutor'?[['ins','Insights'],['report','Report'],['plan','Company plan']]:[]).map(a=>`<button class="tab" aria-selected="${S.v===a[0]}" data-act="go" data-v="${a[0]}">${a[1]}</button>`).join('')+(m?`<span class="who">${esc(m.name)} (${m.role})</span><button class="tab" data-act="logout">Log out</button>`:'');
+ $('app').innerHTML=({home,about,privacy,auth,dash,live,ins,report,plan}[S.v]||home)();
  if(S.v==='live')wb()}
 function wb(){const c=$('wb'),x=c.getContext('2d');let d=false;x.lineWidth=3;x.lineCap='round';x.strokeStyle='#14213D';
  const p=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height]};
@@ -495,16 +520,22 @@ const act={
  go(d){S.v=d.v;S.msg=null;render()},
  role(d){S.role=d.r;S.reg=true;S.msg=null;S.v='auth';render()},
  reg(d){S.reg=d.y==='1';S.msg=null;render()},
- create(){const n=$('cn').value.trim(),e=$('ce').value.trim().toLowerCase(),p=$('cp').value,t=S.role==='tutor';
-  if(!n||!e.includes('@')||p.length<6)return S.msg=['err','Enter your name, a valid email and a password of 6 or more characters.'],render();
+ async create(){const n=$('cn').value.trim(),e=$('ce').value.trim().toLowerCase(),p=$('cp').value,t=S.role==='tutor';
+  if(n.length<2||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))return S.msg=['err','Enter your full name and a valid email address.'],render();
+  if(p.length<8||!/[A-Za-z]/.test(p)||!/\d/.test(p))return S.msg=['err','Use a password of 8 or more characters with at least one letter and one number.'],render();
+  if(!$('cons').checked)return S.msg=['err','Please tick the consent box to continue.'],render();
+  const salt=canHash()?newSalt():'',ph=salt?await hashPw(p,salt):hs(p);load();
   if(U.some(u=>u.email===e))return S.msg=['err','That email is already registered. Choose Yes, log in.'],render();
-  
-  U.push(t?{id:'u'+Date.now(),role:'tutor',name:n,email:e,pw:hs(p),subject:$('cs').value,av:{d:[1,2,3,4,5],t:TM}}:{id:'u'+Date.now(),role:'student',name:n,email:e,pw:hs(p),grade:$('cg').value});
-  save();S.reg=true;S.pre=e;S.msg=['ok','Account created. Log in to continue.'];render()},
- login(){const u=U.find(x=>x.role===S.role&&x.email===$('le').value.trim().toLowerCase()&&x.pw===hs($('lp').value));
-  if(!u)return S.msg=['err','Email or password is not correct.'],render();
-  ME=u.id;save();S.v='dash';S.t=u.role==='student'?'browse':'req';S.msg=null;render()},
- logout(){ME=null;save();S.v='home';S.msg=null;render()},
+  const base={id:'u'+Date.now(),name:n,email:e,pw:ph,salt,alg:salt?'p2':'hs',consent:{ok:true,ts:new Date().toISOString()}};
+  U.push(t?Object.assign(base,{role:'tutor',subject:$('cs').value,av:{d:[1,2,3,4,5],t:TM}}):Object.assign(base,{role:'student',grade:$('cg').value}));
+  audit('Account created ('+S.role+')',e);save();S.reg=true;S.pre=e;S.msg=['ok','Account created. Log in to continue.'];render()},
+ async login(){const e=$('le').value.trim().toLowerCase(),p=$('lp').value,L=lockGet(),k=L[e]||{n:0,until:0};
+  if(k.until>Date.now())return S.msg=['err','Too many failed attempts. Try again in '+Math.ceil((k.until-Date.now())/60000)+' minute(s).'],render();
+  load();const u=U.find(x=>x.role===S.role&&x.email===e);let ok=false;
+  if(u){if(u.alg==='p2')ok=(await hashPw(p,u.salt))===u.pw;else{ok=u.pw===hs(p);if(ok&&canHash()){u.salt=newSalt();u.pw=await hashPw(p,u.salt);u.alg='p2'}}}
+  if(!ok){k.n++;if(k.n>=5){k.until=Date.now()+5*60000;k.n=0;audit('Account locked after 5 failed logins',e)}else audit('Login failed',e);L[e]=k;lockSet(L);return S.msg=['err','Email or password is not correct.'],render()}
+  delete L[e];lockSet(L);ME=u.id;audit('Login success',e);save();touch();S.v='dash';S.t=u.role==='student'?'browse':'req';S.msg=null;render()},
+ logout(){audit('Logout',(me()||{}).email);ME=null;save();S.v='home';S.msg=null;render()},
  tab(d){S.t=d.t;S.msg=null;S.bk=null;render()},
  book(d){S.bk={tid:d.id,step:1,hrs:MINH};S.msg=null;render()},
  cancelbk(){S.bk=null;render()},
@@ -517,15 +548,15 @@ const act={
   const t=usr(S.bk.tid),hr=S.bk.hrs||MINH,q=quote(hr);
   B.push({id:Date.now(),sid:ME,tid:t.id,d:S.bk.d,h:S.bk.h,hrs:hr,p:q.p,sub:q.due,pm:q.ym,status:'pending'});notify(ME,'Booking confirmed with '+t.name+' on '+fd(S.bk.d)+' at '+S.bk.h+'. Waiting for tutor approval.');notify(t.id,'New request from '+me().name+' for '+fd(S.bk.d)+' at '+S.bk.h+' ('+hr+' hours).');save();
   S.bk=null;S.t='mine';S.msg=['ok','Payment accepted. Your booking is confirmed and matched to '+esc(t.name)+'. Waiting for approval.'];render()},
- appr(d){const b=B.find(x=>String(x.id)===d.id);b.status=d.y==='1'?'approved':'declined';notify(b.sid,d.y==='1'?'Your request was approved. Join the live session at the booked time.':'Your request was declined and your payment is refunded.');save();S.msg=['ok',d.y==='1'?'Request approved. The student has been notified.':'Request declined. Next request shown.'];render()},
- join(d){S.bid=+d.id;S.v='live';render()},
+ appr(d){const b=B.find(x=>String(x.id)===d.id);if(!b||b.tid!==ME||b.status!=='pending')return;audit('Request '+(d.y==='1'?'approved':'declined'),(me()||{}).email);b.status=d.y==='1'?'approved':'declined';notify(b.sid,d.y==='1'?'Your request was approved. Join the live session at the booked time.':'Your request was declined and your payment is refunded.');save();S.msg=['ok',d.y==='1'?'Request approved. The student has been notified.':'Request declined. Next request shown.'];render()},
+ join(d){const b=B.find(x=>x.id===+d.id);if(!b||b.status!=='approved'||(b.sid!==ME&&b.tid!==ME))return;S.bid=+d.id;S.v='live';render()},
  cam(){const v=$('vid');(navigator.mediaDevices?navigator.mediaDevices.getUserMedia({video:true}):Promise.reject()).then(s=>{stream=s;v.srcObject=s;v.play()}).catch(()=>$('cm').textContent='Camera is not available or permission was denied.')},
  wclear(){const c=$('wb');c.getContext('2d').clearRect(0,0,c.width,c.height)},
  leave(){stop();const b=B.find(x=>x.id===S.bid),m=me();S.v='dash';if(m.role==='student'){b.att=true;S.t='mine'}else{S.t='sess';S.rep=b.id}save();render()},
- rate(d){const b=B.find(x=>String(x.id)===d.id);b.rating=+$('rt'+d.id).value;notify(b.tid,'A student rated your session '+b.rating+' out of 10.');b.fb=$('fb'+d.id).value.trim();save();render()},
- repo(d){S.rep=+d.id;render()},
+ rate(d){const b=B.find(x=>String(x.id)===d.id);if(!b||b.sid!==ME)return;b.rating=+$('rt'+d.id).value;notify(b.tid,'A student rated your session '+b.rating+' out of 10.');b.fb=$('fb'+d.id).value.trim();save();render()},
+ repo(d){const b=B.find(x=>x.id===+d.id);if(!b||b.tid!==ME)return;S.rep=+d.id;render()},
  reps(d){const b=B.find(x=>String(x.id)===d.id),t=$('rtp').value.trim(),n=$('rnt').value.trim(),s=+$('rsc').value;
-  if(!t||!n||s<0||s>10)return S.msg=['err','Add the topic, feedback and a score from 0 to 10.'],render();
+  if(!b||b.tid!==ME||b.status!=='approved')return;if(!t||!n||s<0||s>10)return S.msg=['err','Add the topic, feedback and a score from 0 to 10.'],render();
   b.report={topic:t,notes:n,score:s};b.status='done';notify(b.sid,'Your progress report is ready on your dashboard.');S.rep=null;save();S.msg=['ok','Report sent to the student dashboard.'];render()},
  psave(){const m=me(),d=[...document.querySelectorAll('.pd:checked')].map(x=>+x.value),t=[...document.querySelectorAll('.pt:checked')].map(x=>x.value);
   if(!d.length||!t.length)return S.msg=['err','Choose at least one day and at least one start time.'],render();
@@ -534,6 +565,12 @@ const act={
   const c=U.filter(u=>u.role==='tutor'&&u.subject===S.f).map(t=>({t,s:slots(t,MINH)[0]})).filter(x=>x.s).sort((a,b)=>(a.s[0]+a.s[1]).localeCompare(b.s[0]+b.s[1])||avg(b.t)-avg(a.t));
   if(!c.length)return S.msg=['err','No tutor has a free slot for that subject right now.'],render();
   S.bk={tid:c[0].t.id,step:1,hrs:MINH};S.msg=['ok','Matched you with '+esc(c[0].t.name)+', the tutor with the earliest free slot.'];render()},
+ dl(){const m=me(),o={profile:{name:m.name,email:m.email,role:m.role,grade:m.grade,subject:m.subject,consent:m.consent},bookings:B.filter(b=>b.sid===m.id||b.tid===m.id),notifications:N.filter(n=>n.to===m.id)};
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(o,null,2)],{type:'application/json'}));a.download='my-nova-forge-data.json';a.click();audit('Data downloaded',m.email)},
+ del(){const m=me();if(/^d\d$/.test(m.id))return S.msg=['err','Demo accounts cannot be deleted.'],render();
+  if(!confirm('Delete your account and all your bookings? This cannot be undone.'))return;
+  B.filter(b=>b.tid===m.id&&b.sid!==m.id).forEach(b=>notify(b.sid,'A booking was cancelled because the tutor left Nova Forge. Your payment is refunded.'));
+  B=B.filter(b=>b.sid!==m.id&&b.tid!==m.id);N=N.filter(n=>n.to!==m.id);U=U.filter(u=>u.id!==m.id);audit('Account deleted',m.email);ME=null;save();S.v='home';S.msg=null;render()},
  readall(){N.forEach(n=>{if(n.to===ME)n.read=true});save();render()},
  print(){window.print()},
  copy(){const b=$('cp');(navigator.clipboard?navigator.clipboard.writeText(PARAS.join('\n\n')):Promise.reject()).then(()=>b.textContent='Copied').catch(()=>b.textContent='Copy failed');setTimeout(()=>b.textContent='Copy text',1800)}
@@ -545,6 +582,9 @@ document.addEventListener('change',e=>{const t=e.target;
  if(t.dataset.inc){S.inc=t.checked;render()}
  if(t.dataset.hrs){S.bk.hrs=+t.value;render()}
  if(t.dataset.td){S.td=t.value;try{localStorage.setItem('nf_td',S.td)}catch(e){}render()}});
+let last=Date.now();const touch=()=>{last=Date.now()};
+['click','keydown','pointerdown'].forEach(e=>document.addEventListener(e,touch,true));
+setInterval(()=>{if(ME&&Date.now()-last>15*60000){const u=me();audit('Session timed out',u&&u.email);stop();ME=null;save();S.v='auth';S.role=u?u.role:'student';S.reg=true;S.msg=['err','You were logged out after 15 minutes of inactivity.'];render()}},30000);
 const sync=()=>{load();const a=document.activeElement;if(!a||!/INPUT|TEXTAREA|SELECT/.test(a.tagName))render()};
 window.addEventListener('storage',e=>{if(e.key===K)sync()});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
@@ -585,7 +625,7 @@ render();
  [/tutor|teach|become/,()=>'Tutors choose Tutor journey, create an account, set their subject and availability, then approve requests. Tutors receive '+P().T+'% of the fees from their students.'],
  [/subject|grade|math|accounting|econ|business|science/,()=>'We offer Mathematics, Accounting, Economics, Business Studies, Physical Sciences and Life Sciences for Grades 10 to 12.'],
  [/who|about|mission|nova forge|why/,()=>'Nova Forge is a tutoring company giving learners from underprivileged backgrounds in Limpopo equal access to quality education at an accessible price.'],
- [/safe|secur|privacy|popia|data|password/,()=>'Passwords are scrambled, card details are never stored, and we plan to require parental consent for learners under 18. Tutors can read our security and recovery plan under Company plan.'],
+ [/safe|secur|privacy|popia|data|password/,()=>'Passwords are scrambled, card details are never stored, and a parent or guardian must agree for learners under 18. Accounts lock for 5 minutes after 5 failed logins, and you are logged out after 15 minutes of inactivity. Tutors can read our security and recovery plan under Company plan.'],
  [/remind|notif/,()=>'You get automatic notifications when a booking is made, approved, declined, reported or rated, and reminders the day before and the day of your session. Open the Notifications tab.']
  ];
  const add=(t,u)=>{const d=document.createElement('div');d.className='mb'+(u?' u':'');d.textContent=t;log.appendChild(d);log.scrollTop=log.scrollHeight};
