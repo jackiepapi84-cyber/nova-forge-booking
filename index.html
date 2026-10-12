@@ -241,6 +241,8 @@ input,select,textarea{background:#fff;border:1px solid rgba(0,0,0,.18)}
 :root[data-theme=dark] .mb.u,:root[data-theme=dark] .cin button{background:var(--a);color:#06121F}
 :root[data-theme=dark] .chips button{background:#2C2C2E;border-color:rgba(255,255,255,.14);color:var(--ink)}
 @media print{#chatBtn,#chatBox{display:none}}
+/* wider top bar so every tab and Log out fit */
+.bar{max-width:1120px}
 </style>
 </head>
 <body>
@@ -289,7 +291,7 @@ const msg=()=>S.msg?`<p class="msg ${S.msg[0]}" role="alert">${S.msg[1]}</p>`:''
 function chart(labels,vals,fmt,xt,yt){
  const W=640,H=280,L=56,Bm=44,T=16,Rr=12,w=W-L-Rr,h=H-T-Bm,mx=Math.max(0,...vals),mn=Math.min(0,...vals),sp=(mx-mn)||1,y=v=>T+h*(1-(v-mn)/sp),bw=w/vals.length;
  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${yt} by ${xt}">`;
- for(let i=0;i<=4;i++){const v=mn+sp*i/4,yy=y(v);s+=`<line x1="${L}" x2="${W-Rr}" y1="${yy}" y2="${yy}" stroke="#D5DDEA"/><text x="${L-6}" y="${yy+4}" text-anchor="end" font-size="11" fill="#4A5873">${fmt(v)}</text>`}
+ const nt=vals.every(Number.isInteger)&&sp<=10?sp:4;for(let i=0;i<=nt;i++){const v=mn+sp*i/nt,yy=y(v);s+=`<line x1="${L}" x2="${W-Rr}" y1="${yy}" y2="${yy}" stroke="#D5DDEA"/><text x="${L-6}" y="${yy+4}" text-anchor="end" font-size="11" fill="#4A5873">${fmt(v)}</text>`}
  vals.forEach((v,i)=>{const x0=L+i*bw+bw*.15;s+=`<rect x="${x0}" y="${Math.min(y(v),y(0))}" width="${bw*.7}" height="${Math.max(Math.abs(y(v)-y(0)),1)}" fill="${v<0?'#B5423A':'#0B6E8A'}"><title>${labels[i]}: ${fmt(v)}</title></rect><text x="${x0+bw*.35}" y="${H-Bm+16}" text-anchor="middle" font-size="11" fill="#4A5873">${labels[i]}</text>`});
  return s+`<line x1="${L}" x2="${W-Rr}" y1="${y(0)}" y2="${y(0)}" stroke="#14213D"/><text x="${L+w/2}" y="${H-6}" text-anchor="middle" font-size="12" fill="#14213D">${xt}</text><text transform="rotate(-90 12 ${T+h/2})" x="12" y="${T+h/2}" text-anchor="middle" font-size="12" fill="#14213D">${yt}</text></svg>`}
 
